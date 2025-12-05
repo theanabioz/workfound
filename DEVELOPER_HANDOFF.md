@@ -2,7 +2,7 @@
 
 **Project:** Workfound
 **Type:** Hybrid Job Board + ATS
-**Current State:** Beta (Phases 1-4 Completed)
+**Current State:** Beta v1.0 (Phases 1-5 Completed)
 **Last Update:** December 3, 2025
 
 ---
@@ -11,50 +11,49 @@
 
 1.  **Infrastructure:** Supabase (PostgreSQL + Auth + Realtime). API in `src/lib/supabase-service.ts`.
 2.  **Styling:** Tailwind v4 (no config file).
-3.  **Key Components:**
-    - `DashboardSidebar.tsx`: Grouped menu sections, mobile responsive.
-    - `ChatSystem.tsx`: Realtime messaging (listens to `messages` and `conversations`).
-    - `KanbanBoard.tsx`: Vertical DnD with filters.
-    - `EventModal.tsx` & `/calendar`: Apple-style planning.
+3.  **Critical Architecture:**
+    *   **Companies:** Users belong to a Company (`company_members`). Jobs belong to a Company.
+    *   **RLS:** Policies are strict. Be careful with recursive policies (e.g. `company_members`).
+4.  **Key Components:**
+    *   `KanbanBoard.tsx`: Vertical DnD Accordion.
+    *   `ChatSystem.tsx`: Realtime messaging.
+    *   `EventModal.tsx`: Calendar.
 
 ---
 
 ## ✅ Completed Features
 
 1.  **Core ATS:**
-    - Create Job (ATS vs Direct mode).
-    - **Screening Questions:** Auto-reject logic implemented.
-    - **Kanban:** Vertical accordion with drag & drop.
-    - **Notes:** Internal comments on candidates.
-2.  **Search & Match:**
-    - Job Search & Resume Search.
-    - **Favorites:** Bookmark jobs/candidates.
-3.  **Communication:**
-    - **Realtime Chat:** 1-on-1 messaging between Employer and Seeker.
-    - **Calendar:** Schedule interviews (Monthly grid).
+    - **Companies:** Multi-user architecture ready (currently 1 owner). Public Company Pages (`/company/[slug]`).
+    - **Kanban:** Vertical drag & drop.
+    - **Screening:** Auto-reject logic.
+    - **Notes:** Internal comments.
+2.  **Communication:**
+    - Realtime Chat (Employer <-> Seeker).
+    - Calendar (Apple-style grid).
+3.  **Search & Match:**
+    - Resume & Job Search.
+    - Saved Items.
 4.  **UX/UI:**
-    - Responsive Sidebar with categories.
-    - Compact "Square" Cards in Kanban.
-    - Modal-based details view.
+    - Responsive Sidebar.
+    - Settings Page (Profile + Company).
 
 ---
 
-## 🚧 Roadmap (What's Next)
+## 🚧 Roadmap (Future)
 
-**Priority: Phase 5 (Business)**
-1.  **Company Profiles:** Public page for employer brand.
-2.  **Team:** Invite colleagues.
-3.  **Billing:** Stripe.
-
-**Priority: Phase 6 (Intelligence)**
-1.  **AI:** Job description generator.
-2.  **Analytics:** Funnel charts.
+**Priority: Phase 6 (Intelligence & Scaling)**
+1.  **Team Management:** UI to invite other members to the company (`company_members`).
+2.  **Billing:** Stripe integration for Premium Jobs.
+3.  **AI:** Job description generator.
+4.  **File Storage:** Real avatars and PDF resumes (Supabase Storage).
 
 ---
 
 ## 🤖 Recovery Prompt
 
-> "I am working on Workfound (Next.js 15 + Supabase).
-> We have a fully functional ATS with Chat, Calendar, Screening, and Kanban.
-> Please review `DEVELOPER_HANDOFF.md` to understand the architecture.
+> "I am continuing development on 'Workfound'.
+> We have a fully functional ATS with Companies, Chat, Calendar, and Kanban.
+> Please review `DEVELOPER_HANDOFF.md`.
+> Note: RLS policies for `company_members` were fixed to avoid recursion.
 > Let's proceed with [INSERT NEXT TASK]."

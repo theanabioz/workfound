@@ -42,7 +42,26 @@ export interface Job {
   status: JobStatus;
   createdAt: string;
   updatedAt: string;
-  questions?: JobQuestion[]; // Вопросы к вакансии
+  questions?: JobQuestion[]; 
+  companyId?: string; // Привязка к компании
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  slug?: string;
+  logoUrl?: string;
+  website?: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface CompanyMember {
+  id: string;
+  companyId: string;
+  userId: string;
+  role: 'owner' | 'admin' | 'recruiter';
+  profile?: UserProfile;
 }
 
 export interface JobQuestion {

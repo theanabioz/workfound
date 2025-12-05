@@ -49,12 +49,31 @@ export async function signup(formData: FormData) {
   }
 
   // 2. Важный хак: Триггер в БД создает профиль с ролью 'seeker'.
-  // Если пользователь выбрал 'employer', нам нужно обновить его профиль.
+  // Если пользователь выбрал 'employer', нам нужно обновить его профиль И создать компанию.
   if (data.user && role === 'employer') {
+    // Обновляем роль
     await supabase
       .from('profiles')
       .update({ role: 'employer' })
       .eq('id', data.user.id)
+
+    // Создаем компанию
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .insert({ name: `${fullName}'s Company` })
+      .select()
+      .single();
+    
+    if (!companyError && company) {
+      // Делаем владельцем
+      await supabase
+        .from('company_members')
+        .insert({
+          company_id: company.id,
+          user_id: data.user.id,
+          role: 'owner'
+        });
+    }
   }
 
   revalidatePath('/', 'layout')
