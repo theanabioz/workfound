@@ -18,7 +18,8 @@ import {
   Menu,
   X,
   MessageSquare,
-  History
+  History,
+  Bell
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -85,6 +86,7 @@ export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
       title: 'Поиск',
       items: [
         { label: 'Найти работу', href: '/', icon: Search },
+        { label: 'Подписки', href: '/seeker/alerts', icon: Bell }, // New
         { label: 'Избранное', href: '/seeker/saved', icon: Bookmark },
         { label: 'Сообщения', href: '/seeker/messages', icon: MessageSquare },
       ]

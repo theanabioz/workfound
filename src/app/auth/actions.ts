@@ -3,6 +3,30 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function sendTestEmail() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user || !user.email) throw new Error('No user email');
+
+  const { data, error } = await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev', 
+    to: user.email, // Send to current user
+    subject: 'Workfound Test Alert',
+    html: '<p>Привет! Это тестовое уведомление от <strong>Workfound</strong>. Система оповещений работает!</p>'
+  });
+
+  if (error) {
+    console.error('Resend Error:', error);
+    throw new Error(error.message);
+  }
+
+  return { success: true, id: data?.id };
+}
 
 export async function login(formData: FormData) {
   const supabase = await createClient()

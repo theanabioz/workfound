@@ -1,8 +1,86 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin'; // Import Admin Client
 import { Job, Application, Resume, UserProfile, JobQuestion, QuestionAnswer, Company, CompanyMember, CalendarEvent } from '@/types';
 import { redirect } from 'next/navigation';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// --- HELPER: Alerts ---
+async function checkAndSendAlerts(job: Job) {
+  console.log(`[ALERTS] Checking alerts for job: "${job.title}" in "${job.location}"`);
+  // Use ADMIN client to bypass RLS
+  const supabase = createAdminClient();
+  
+  // 1. Загружаем ВСЕ алерты (для дебага, в проде так делать нельзя, нужен Full Text Search)
+  const { data: allAlerts } = await supabase
+    .from('job_alerts')
+    .select('*, profiles(email)');
+
+  if (!allAlerts) {
+    console.log('[ALERTS] No alerts found in DB');
+    return;
+  }
+
+  // 2. Фильтруем вручную (чтобы точно понять логику)
+  const matchingAlerts = allAlerts.filter((alert: any) => {
+    console.log(`[ALERTS DEBUG] Alert: "${alert.keywords}" Location: "${alert.location}" vs Job: "${job.title}" Loc: "${job.location}"`);
+    
+    const keywordMatch = 
+      (alert.keywords && job.title.toLowerCase().includes(alert.keywords.toLowerCase())) || 
+      (alert.keywords && alert.keywords.toLowerCase().includes(job.title.toLowerCase()));
+    
+    const locationMatch = 
+      !alert.location || 
+      job.location.toLowerCase().includes(alert.location.toLowerCase());
+
+    if (keywordMatch && locationMatch) {
+      console.log(`[ALERTS] Match found! User: ${alert.profiles?.email}, Keywords: ${alert.keywords}`);
+      return true;
+    }
+    return false;
+  });
+
+  if (matchingAlerts.length === 0) {
+    console.log('[ALERTS] No matching alerts found after filtering');
+    return;
+  }
+
+  // 3. Отправляем
+  for (const alert of matchingAlerts) {
+    const email = alert.profiles?.email;
+    if (!email) continue;
+
+    try {
+      console.log(`[ALERTS] Sending email to ${email}...`);
+      const { error } = await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+        to: email,
+        subject: `Новая вакансия: ${job.title}`,
+        html: `
+          <h1>Найдена новая вакансия!</h1>
+          <p>По вашему запросу <strong>"${alert.keywords}"</strong> появилась новая позиция:</p>
+          <div style="border: 1px solid #eee; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2>${job.title}</h2>
+            <p><strong>Локация:</strong> ${job.location}</p>
+            <p><strong>Зарплата:</strong> ${job.salaryRange}</p>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/jobs/${job.id}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Посмотреть вакансию</a>
+          </div>
+        `
+      });
+      
+      if (error) {
+        console.error('[ALERTS] Resend Error:', error);
+      } else {
+        console.log(`[ALERTS] Email sent successfully to ${email}`);
+      }
+    } catch (error) {
+      console.error('[ALERTS] Failed to send alert email:', error);
+    }
+  }
+}
 
 // --- COMPANIES ---
 
@@ -10,7 +88,7 @@ export async function getCurrentCompany(): Promise<Company | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    console.log('getCurrentCompany: No user');
+    // console.log('getCurrentCompany: No user');
     return null;
   }
 
@@ -20,13 +98,7 @@ export async function getCurrentCompany(): Promise<Company | null> {
     .select('company_id, companies(*)')
     .eq('user_id', user.id);
 
-  if (error) {
-    console.error('getCurrentCompany Error:', error);
-    return null;
-  }
-
-  if (!members || members.length === 0) {
-    console.log('getCurrentCompany: No membership found for user', user.id);
+  if (error || !members || members.length === 0) {
     return null;
   }
 
@@ -185,11 +257,9 @@ export async function getJobById(id: string): Promise<Job | undefined> {
   return job;
 }
 
-// UPDATED: Теперь ищет по company_id, а не employer_id (но для обратной совместимости может и по employer_id)
 export async function getEmployerJobs(userId: string): Promise<Job[]> {
   const supabase = await createClient();
   
-  // Сначала пробуем найти компанию
   const company = await getCurrentCompany();
   
   let query = supabase.from('jobs').select('*').order('created_at', { ascending: false });
@@ -197,7 +267,6 @@ export async function getEmployerJobs(userId: string): Promise<Job[]> {
   if (company) {
     query = query.eq('company_id', company.id);
   } else {
-    // Fallback для старых данных (хотя миграция должна была всё поправить)
     query = query.eq('employer_id', userId);
   }
 
@@ -220,7 +289,7 @@ export async function createJob(jobData: Omit<Job, 'id' | 'createdAt' | 'updated
 
   const dbJob = {
     employer_id: user.id,
-    company_id: company?.id, // Привязываем к компании
+    company_id: company?.id,
     title: jobData.title,
     description: jobData.description,
     location: jobData.location,
@@ -253,7 +322,13 @@ export async function createJob(jobData: Omit<Job, 'id' | 'createdAt' | 'updated
     if (qError) console.error('Error saving questions:', qError);
   }
 
-  return mapJobFromDB(savedJob);
+  // NEW: Send Alerts
+  // Мы не ждем завершения (fire and forget), чтобы не тормозить UI
+  // Но в Server Actions лучше дождаться, иначе Next может убить процесс
+  const finalJob = mapJobFromDB(savedJob);
+  await checkAndSendAlerts(finalJob);
+
+  return finalJob;
 }
 
 export async function getJobQuestions(jobId: string): Promise<JobQuestion[]> {
@@ -402,11 +477,9 @@ export async function submitApplication(appData: Omit<Application, 'id' | 'statu
 export async function getEmployerApplications(employerId: string): Promise<(Application & { jobTitle: string; resume?: Resume })[]> {
   const supabase = await createClient();
   
-  // UPDATED: Теперь фильтруем по вакансиям КОМПАНИИ
-  // Получаем компанию текущего юзера
   const { data: member } = await supabase.from('company_members').select('company_id').eq('user_id', employerId).single();
   
-  if (!member) return []; // У юзера нет компании
+  if (!member) return [];
 
   const { data, error } = await supabase
     .from('applications')
@@ -415,7 +488,7 @@ export async function getEmployerApplications(employerId: string): Promise<(Appl
       jobs ( title, employer_id, company_id ),
       resumes ( * )
     `)
-    .eq('jobs.company_id', member.company_id); // Фильтр по компании
+    .eq('jobs.company_id', member.company_id);
 
   if (error) return [];
 
@@ -462,8 +535,7 @@ export async function updateApplicationStatus(appId: string, status: string): Pr
   if (error) throw error;
 }
 
-// --- CHAT, CALENDAR, NOTES, SAVED (Restored) ---
-// (Я восстановлю их сокращенно, чтобы файл не был бесконечным, они не менялись логически, кроме привязки к companyId в будущем)
+// --- CHAT ---
 
 export async function startConversation(otherUserId: string, jobId?: string): Promise<string> {
   const supabase = await createClient();
@@ -483,25 +555,6 @@ export async function startConversation(otherUserId: string, jobId?: string): Pr
   const { data: newConv, error } = await supabase.from('conversations').insert({ employer_id: employerId, seeker_id: seekerId, job_id: jobId }).select().single();
   if (error) throw error;
   return newConv.id;
-}
-
-export interface Conversation {
-  id: string;
-  employerId: string;
-  seekerId: string;
-  jobId?: string;
-  updatedAt: string;
-  otherUser?: { fullName: string; role: string };
-  lastMessage?: string;
-}
-
-export interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  content: string;
-  isRead: boolean;
-  createdAt: string;
 }
 
 export async function getConversations(): Promise<Conversation[]> {
@@ -543,6 +596,8 @@ export async function sendMessage(conversationId: string, content: string): Prom
   return { id: data.id, conversationId: data.conversation_id, senderId: data.sender_id, content: data.content, isRead: data.is_read, createdAt: data.created_at };
 }
 
+// --- CALENDAR ---
+
 export async function getEvents(): Promise<CalendarEvent[]> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -567,6 +622,8 @@ export async function deleteEvent(id: string): Promise<void> {
   await supabase.from('calendar_events').delete().eq('id', id);
 }
 
+// --- NOTES ---
+
 export async function getNotes(applicationId: string): Promise<Note[]> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('application_notes').select(`*, author:profiles(full_name)`).eq('application_id', applicationId).order('created_at', { ascending: true });
@@ -587,6 +644,72 @@ export async function deleteNote(noteId: string): Promise<void> {
   const supabase = await createClient();
   await supabase.from('application_notes').delete().eq('id', noteId);
 }
+
+// --- JOB ALERTS (NEW) ---
+
+export interface JobAlert {
+  id: string;
+  keywords?: string;
+  location?: string;
+  frequency: string;
+  createdAt: string;
+}
+
+export async function createJobAlert(alertData: { keywords?: string; location?: string }): Promise<JobAlert> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('job_alerts')
+    .insert({
+      user_id: user.id,
+      keywords: alertData.keywords,
+      location: alertData.location
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    keywords: data.keywords,
+    location: data.location,
+    frequency: data.frequency,
+    createdAt: data.created_at
+  };
+}
+
+export async function getJobAlerts(): Promise<JobAlert[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('job_alerts')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) return [];
+
+  return data.map((a: any) => ({
+    id: a.id,
+    keywords: a.keywords,
+    location: a.location,
+    frequency: a.frequency,
+    createdAt: a.created_at
+  }));
+}
+
+export async function deleteJobAlert(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('job_alerts').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// --- SAVED ITEMS ---
 
 export async function toggleSavedItem(itemId: string, type: 'job' | 'resume'): Promise<boolean> {
   const supabase = await createClient();
