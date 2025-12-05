@@ -1,9 +1,8 @@
-'use client';
-
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Application, Resume } from '@/types';
-import { Note, getNotes, addNote, deleteNote } from '@/lib/supabase-service';
-import { X, User, Briefcase, MessageSquare, Trash2, Send } from 'lucide-react';
+import { Note, getNotes, addNote, deleteNote, startConversation } from '@/lib/supabase-service';
+import { X, User, Briefcase, MessageSquare, Trash2, Send, Mail } from 'lucide-react';
 
 type AppWithDetails = Application & { jobTitle: string; resume?: Resume };
 
@@ -13,6 +12,7 @@ interface ModalProps {
 }
 
 export function ApplicationModal({ app, onClose }: ModalProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'info' | 'notes'>('info');
   const [notes, setNotes] = useState<Note[]>([]);
   const [newNote, setNewNote] = useState('');
@@ -60,6 +60,16 @@ export function ApplicationModal({ app, onClose }: ModalProps) {
     await deleteNote(id);
   };
 
+  const handleStartChat = async () => {
+    try {
+      await startConversation(app.seekerId, app.jobId);
+      router.push('/employer/messages');
+    } catch (error) {
+      console.error(error);
+      alert('Ошибка создания чата');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
@@ -77,9 +87,19 @@ export function ApplicationModal({ app, onClose }: ModalProps) {
               <p className="text-sm text-gray-500">{app.jobTitle}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+          
+          <div className="flex gap-2">
+            <button 
+              onClick={handleStartChat}
+              className="p-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors flex items-center gap-2 px-4 text-sm font-medium"
+            >
+              <Mail className="w-4 h-4" />
+              Написать
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}

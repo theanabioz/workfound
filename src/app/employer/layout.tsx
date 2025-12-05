@@ -10,8 +10,8 @@ export default function EmployerLayout({
       {/* Sidebar фиксирован слева */}
       <DashboardSidebar role="employer" userName="Hans Mueller" />
       
-      {/* Контент смещен вправо */}
-      <div className="ml-64">
+      {/* Контент смещен вправо (только на десктопе) */}
+      <div className="md:ml-64">
         {children}
       </div>
     </div>

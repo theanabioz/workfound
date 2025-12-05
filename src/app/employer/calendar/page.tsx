@@ -88,7 +88,7 @@ export default function AppleCalendarPage() {
       </div>
 
       {/* GRID HEADER (Weekdays) */}
-      <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50 shrink-0">
+      <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50 shrink-0 min-w-[700px] lg:min-w-0">
         {weekDays.map(day => (
           <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">
             {day}
@@ -97,7 +97,7 @@ export default function AppleCalendarPage() {
       </div>
 
       {/* GRID BODY */}
-      <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto bg-gray-100 gap-px border-gray-200">
+      <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto bg-gray-100 gap-px border-gray-200 min-w-[700px] lg:min-w-0">
         {calendarDays.map((day, idx) => {
           const dayEvents = getEventsForDay(day);
           const isCurrentMonth = isSameMonth(day, monthStart);

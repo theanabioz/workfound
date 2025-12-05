@@ -672,6 +672,174 @@ export async function deleteEvent(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// --- CHAT SYSTEM ---
+
+export interface Conversation {
+  id: string;
+  employerId: string;
+  seekerId: string;
+  jobId?: string;
+  updatedAt: string;
+  otherUser?: { fullName: string; role: string }; // Виртуальное поле для UI
+  lastMessage?: string; // Для списка
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export async function startConversation(otherUserId: string, jobId?: string): Promise<string> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Определяем кто есть кто. Нам нужно знать роль текущего юзера
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  let employerId, seekerId;
+  if (profile?.role === 'employer') {
+    employerId = user.id;
+    seekerId = otherUserId;
+  } else {
+    employerId = otherUserId;
+    seekerId = user.id;
+  }
+
+  // 1. Пробуем найти существующий
+  let query = supabase
+    .from('conversations')
+    .select('id')
+    .eq('employer_id', employerId)
+    .eq('seeker_id', seekerId);
+  
+  if (jobId) {
+    query = query.eq('job_id', jobId);
+  }
+
+  const { data: existing } = await query.single();
+
+  if (existing) return existing.id;
+
+  // 2. Создаем новый
+  const { data: newConv, error } = await supabase
+    .from('conversations')
+    .insert({
+      employer_id: employerId,
+      seeker_id: seekerId,
+      job_id: jobId
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return newConv.id;
+}
+
+export async function getConversations(): Promise<Conversation[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  // Загружаем диалоги + профили собеседников + последнее сообщение
+  // Это сложный запрос, упростим: загрузим диалоги, а потом профили
+  const { data, error } = await supabase
+    .from('conversations')
+    .select(`
+      *,
+      employer:profiles!conversations_employer_id_fkey(id, full_name, role),
+      seeker:profiles!conversations_seeker_id_fkey(id, full_name, role),
+      messages(content, created_at)
+    `)
+    .or(`employer_id.eq.${user.id},seeker_id.eq.${user.id}`)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data.map((item: any) => {
+    const isMeEmployer = item.employer_id === user.id;
+    const other = isMeEmployer ? item.seeker : item.employer;
+    // Последнее сообщение (берем самое свежее из массива, если есть)
+    const lastMsg = item.messages?.sort((a:any, b:any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+    return {
+      id: item.id,
+      employerId: item.employer_id,
+      seekerId: item.seeker_id,
+      jobId: item.job_id,
+      updatedAt: item.updated_at,
+      otherUser: { fullName: other?.full_name || 'Unknown', role: other?.role },
+      lastMessage: lastMsg?.content
+    };
+  });
+}
+
+export async function getMessages(conversationId: string): Promise<Message[]> {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  if (error) return [];
+
+  return data.map((m: any) => ({
+    id: m.id,
+    conversationId: m.conversation_id,
+    senderId: m.sender_id,
+    content: m.content,
+    isRead: m.is_read,
+    createdAt: m.created_at
+  }));
+}
+
+export async function sendMessage(conversationId: string, content: string): Promise<Message> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // 1. Добавляем сообщение
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      content
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // 2. Обновляем updated_at у диалога (чтобы поднять его в списке)
+  await supabase
+    .from('conversations')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', conversationId);
+
+  return {
+    id: data.id,
+    conversationId: data.conversation_id,
+    senderId: data.sender_id,
+    content: data.content,
+    isRead: data.is_read,
+    createdAt: data.created_at
+  };
+}
+
 // --- MAPPERS ---
 
 function mapJobFromDB(dbJob: any): Job {

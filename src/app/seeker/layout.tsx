@@ -8,7 +8,7 @@ export default function SeekerLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardSidebar role="seeker" userName="Ivan Petrov" />
-      <div className="ml-64">
+      <div className="md:ml-64">
         {children}
       </div>
     </div>
