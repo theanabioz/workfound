@@ -1,79 +1,60 @@
 # 🛠 Developer Handoff & Context Recovery
 
 **Project:** Workfound
-**Type:** Hybrid Job Board + ATS (Applicant Tracking System)
-**Current State:** Feature-Complete MVP (Phases 1-4 Completed)
+**Type:** Hybrid Job Board + ATS
+**Current State:** Beta (Phases 1-4 Completed)
 **Last Update:** December 3, 2025
 
 ---
 
-## 🚀 Quick Start for New AI Instance
+## 🚀 Quick Start
 
-If you are a new AI agent taking over this project, **READ THIS FIRST**.
-
-1.  **Infrastructure:** Fully migrated to **Supabase**. Do NOT use `mock-service.ts` or `db.json`. Use `src/lib/supabase-service.ts` for ALL data operations.
-2.  **Styling:** **Tailwind CSS v4**. Config is inside `src/app/globals.css` (`@import "tailwindcss";`). No `tailwind.config.ts`.
-3.  **Critical Components:**
-    *   `KanbanBoard.tsx`: **Vertical** Drag & Drop Accordion.
-    *   `ChatSystem.tsx`: Realtime messaging using Supabase Channels.
-    *   `EventModal.tsx`: Calendar scheduling modal.
-4.  **Features Implemented:**
-    *   **ATS:** Kanban with drag & drop, Screening Questions (Auto-reject).
-    *   **Communication:** Real-time Chat (`/employer/messages`).
-    *   **Planning:** Apple-style Monthly Calendar (`/employer/calendar`).
-    *   **Search:** Resume & Job search with Favorites.
+1.  **Infrastructure:** Supabase (PostgreSQL + Auth + Realtime). API in `src/lib/supabase-service.ts`.
+2.  **Styling:** Tailwind v4 (no config file).
+3.  **Key Components:**
+    - `DashboardSidebar.tsx`: Grouped menu sections, mobile responsive.
+    - `ChatSystem.tsx`: Realtime messaging (listens to `messages` and `conversations`).
+    - `KanbanBoard.tsx`: Vertical DnD with filters.
+    - `EventModal.tsx` & `/calendar`: Apple-style planning.
 
 ---
 
-## 🏗 Architecture Overview
+## ✅ Completed Features
 
-### 1. Tech Stack
-- **Framework:** Next.js 15 (App Router).
-- **Language:** TypeScript.
-- **DB/Auth:** Supabase (PostgreSQL, Auth, Realtime).
-- **UI:** Tailwind v4 + Lucide React + dnd-kit.
-
-### 2. Database Schema (Supabase)
-See `migration_*.sql` files for history.
-- `profiles`, `jobs`, `resumes`, `applications`
-- `conversations`, `messages` (Chat)
-- `calendar_events` (Schedule)
-- `job_questions`, `application_answers` (Screening)
-- `application_notes` (Internal comments)
-
----
-
-## ✅ What is DONE
-
-1.  **Core:** Auth, DB, Middleware Protection.
-2.  **ATS:** Vertical Kanban, Screening, Notes.
-3.  **Search:** Resumes & Jobs + Favorites.
-4.  **Planning:** Interactive Calendar.
-5.  **Communication:** Realtime Chat.
+1.  **Core ATS:**
+    - Create Job (ATS vs Direct mode).
+    - **Screening Questions:** Auto-reject logic implemented.
+    - **Kanban:** Vertical accordion with drag & drop.
+    - **Notes:** Internal comments on candidates.
+2.  **Search & Match:**
+    - Job Search & Resume Search.
+    - **Favorites:** Bookmark jobs/candidates.
+3.  **Communication:**
+    - **Realtime Chat:** 1-on-1 messaging between Employer and Seeker.
+    - **Calendar:** Schedule interviews (Monthly grid).
+4.  **UX/UI:**
+    - Responsive Sidebar with categories.
+    - Compact "Square" Cards in Kanban.
+    - Modal-based details view.
 
 ---
 
-## 🚧 Immediate Next Steps (The Roadmap)
+## 🚧 Roadmap (What's Next)
 
-**Priority: Phase 5 (Business & Branding)**
-1.  **Team Management:** Allow multiple users per company.
-2.  **Company Profiles:** Public pages (`/company/[slug]`) with reviews.
-3.  **Billing:** Stripe integration.
+**Priority: Phase 5 (Business)**
+1.  **Company Profiles:** Public page for employer brand.
+2.  **Team:** Invite colleagues.
+3.  **Billing:** Stripe.
 
-**Cleanup / Tech Debt:**
-- **File Storage:** Upload real avatars and PDF resumes (Supabase Storage). Currently using placeholders.
-- **Email Notifications:** SendGrid/Resend integration for offline alerts.
+**Priority: Phase 6 (Intelligence)**
+1.  **AI:** Job description generator.
+2.  **Analytics:** Funnel charts.
 
 ---
 
-## 🤖 Recovery Prompt (Copy-Paste this to resume)
+## 🤖 Recovery Prompt
 
-> "I am continuing development on 'Workfound', a Next.js 15 + Supabase Job Board/ATS.
->
-> **Context:**
-> The project has completed Phases 1-4. We have a fully working ATS with Chat, Calendar, and Kanban.
-> We use Tailwind v4. All data logic is in `src/lib/supabase-service.ts`.
->
-> **Current Goal:**
-> Please review `DEVELOPER_HANDOFF.md` and `ROADMAP.md`.
-> Then, let's proceed with [INSERT NEXT TASK, e.g., 'File Uploads for Avatars']."
+> "I am working on Workfound (Next.js 15 + Supabase).
+> We have a fully functional ATS with Chat, Calendar, Screening, and Kanban.
+> Please review `DEVELOPER_HANDOFF.md` to understand the architecture.
+> Let's proceed with [INSERT NEXT TASK]."

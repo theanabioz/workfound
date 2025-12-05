@@ -17,13 +17,19 @@ import {
   Calendar,
   Menu,
   X,
-  MessageSquare
+  MessageSquare,
+  History
 } from 'lucide-react';
 
 interface SidebarItem {
   label: string;
   href: string;
   icon: any;
+}
+
+interface SidebarSection {
+  title?: string; // Optional section title
+  items: SidebarItem[];
 }
 
 interface DashboardSidebarProps {
@@ -35,31 +41,67 @@ export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const employerLinks: SidebarItem[] = [
-    { label: 'Обзор', href: '/employer/dashboard', icon: LayoutDashboard },
-    { label: 'Мои Вакансии', href: '/employer/jobs', icon: Briefcase },
-    { label: 'Поиск резюме', href: '/employer/search', icon: Search },
-    { label: 'Календарь', href: '/employer/calendar', icon: Calendar },
-    { label: 'Сообщения', href: '/employer/messages', icon: MessageSquare }, // New
-    { label: 'Избранные', href: '/employer/saved', icon: Bookmark },
-    { label: 'Отклики (ATS)', href: '/employer/applications', icon: Users },
-    { label: 'Настройки', href: '/employer/settings', icon: Settings },
+  // --- Navigation Structure ---
+  const employerSections: SidebarSection[] = [
+    {
+      title: 'Главное',
+      items: [
+        { label: 'Обзор', href: '/employer/dashboard', icon: LayoutDashboard },
+        { label: 'Календарь', href: '/employer/calendar', icon: Calendar },
+      ]
+    },
+    {
+      title: 'Найм',
+      items: [
+        { label: 'Вакансии', href: '/employer/jobs', icon: Briefcase },
+        { label: 'Кандидаты', href: '/employer/search', icon: Search },
+        { label: 'Воронка (ATS)', href: '/employer/applications', icon: Users },
+        { label: 'Избранное', href: '/employer/saved', icon: Bookmark },
+      ]
+    },
+    {
+      title: 'Связь',
+      items: [
+        { label: 'Сообщения', href: '/employer/messages', icon: MessageSquare },
+      ]
+    },
+    {
+      title: 'Система',
+      items: [
+        { label: 'Настройки', href: '/employer/settings', icon: Settings },
+      ]
+    }
   ];
 
-  const seekerLinks: SidebarItem[] = [
-    { label: 'Моя карьера', href: '/seeker/dashboard', icon: LayoutDashboard },
-    { label: 'Мои резюме', href: '/seeker/resumes', icon: FileText },
-    { label: 'Сохраненные', href: '/seeker/saved', icon: Bookmark },
-    { label: 'Сообщения', href: '/seeker/messages', icon: MessageSquare }, // New (Create page later)
-    { label: 'Поиск работы', href: '/', icon: Briefcase },
-    { label: 'Профиль', href: '/seeker/profile', icon: UserCircle },
+  const seekerSections: SidebarSection[] = [
+    {
+      title: 'Моя карьера',
+      items: [
+        { label: 'Дашборд', href: '/seeker/dashboard', icon: LayoutDashboard },
+        { label: 'Мои резюме', href: '/seeker/resumes', icon: FileText },
+      ]
+    },
+    {
+      title: 'Поиск',
+      items: [
+        { label: 'Найти работу', href: '/', icon: Search },
+        { label: 'Избранное', href: '/seeker/saved', icon: Bookmark },
+        { label: 'Сообщения', href: '/seeker/messages', icon: MessageSquare },
+      ]
+    },
+    {
+      title: 'Профиль',
+      items: [
+        { label: 'Настройки', href: '/seeker/profile', icon: UserCircle },
+      ]
+    }
   ];
 
-  const links = role === 'employer' ? employerLinks : seekerLinks;
+  const sections = role === 'employer' ? employerSections : seekerSections;
 
   return (
     <>
-      {/* Mobile Trigger (Hamburger) */}
+      {/* Mobile Trigger */}
       <button
         onClick={() => setIsOpen(true)}
         className="fixed top-4 left-4 z-40 p-2 bg-white rounded-lg shadow-sm border border-gray-200 md:hidden hover:bg-gray-50"
@@ -67,7 +109,7 @@ export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
         <Menu className="w-6 h-6 text-gray-700" />
       </button>
 
-      {/* Overlay (Backdrop) */}
+      {/* Overlay */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm animate-in fade-in duration-200"
@@ -82,69 +124,73 @@ export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         
-        {/* Logo Area */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
+        {/* Logo */}
+        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100 shrink-0">
           <Link href="/" className="font-bold text-xl tracking-tight text-gray-900 flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className={`w-2 h-2 rounded-full ${role === 'employer' ? 'bg-blue-600' : 'bg-green-600'}`} />
             Workfound
           </Link>
-          
-          {/* Close Button (Mobile only) */}
-          <button 
-            onClick={() => setIsOpen(false)}
-            className="md:hidden p-1 text-gray-400 hover:text-black"
-          >
+          <button onClick={() => setIsOpen(false)} className="md:hidden p-1 text-gray-400 hover:text-black">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* User Info */}
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
-              <UserCircle className="w-6 h-6" />
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8">
+          {sections.map((section, idx) => (
+            <div key={idx}>
+              {section.title && (
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-2">
+                  {section.title}
+                </h3>
+              )}
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-1.5 rounded-md text-xs font-medium transition-all group ${
+                        isActive 
+                          ? 'bg-gray-100 text-gray-900' 
+                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-black' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* User & Logout */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold shrink-0">
+              {userName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate max-w-[140px]" title={userName}>{userName}</p>
-              <p className="text-xs text-gray-500 capitalize">{role === 'employer' ? 'Работодатель' : 'Соискатель'}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{userName}</p>
+              <p className="text-xs text-gray-500 capitalize truncate">{role === 'employer' ? 'Работодатель' : 'Соискатель'}</p>
             </div>
           </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {links.map((link) => {
-            const isActive = pathname === link.href;
-            const Icon = link.icon;
-            
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsOpen(false)} // Close on click (mobile)
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive 
-                    ? 'bg-black text-white' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-black'
-                }`}
-              >
-                <Icon className="w-5 h-5 shrink-0" />
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Bottom Actions */}
-        <div className="p-4 border-t border-gray-100">
+          
           <button 
             onClick={() => signout()}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 w-full transition-colors"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 w-full transition-colors"
           >
-            <LogOut className="w-5 h-5 shrink-0" />
-            Выйти
+            <LogOut className="w-3.5 h-3.5" />
+            Выйти из аккаунта
           </button>
         </div>
+
       </aside>
     </>
   );

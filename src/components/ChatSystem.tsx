@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Conversation, Message, getConversations, getMessages, sendMessage } from '@/lib/supabase-service';
-import { Send, User, Briefcase } from 'lucide-react';
+import { Send, Briefcase } from 'lucide-react';
 
 export function ChatSystem({ currentUserId }: { currentUserId: string }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -14,12 +14,39 @@ export function ChatSystem({ currentUserId }: { currentUserId: string }) {
   
   const supabase = createClient();
 
-  // 1. Load Conversations
+  const loadConversations = async () => {
+    const data = await getConversations();
+    setConversations(data);
+  };
+
+  // 1. Load Conversations & Subscribe to List Updates
   useEffect(() => {
-    getConversations().then(setConversations);
+    loadConversations();
+
+    // Подписка на изменения в списке диалогов (новые чаты или обновления последнего сообщения)
+    const channel = supabase
+      .channel('conversations_list')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE
+          schema: 'public',
+          table: 'conversations'
+        },
+        (payload) => {
+          // Простая стратегия: при любом изменении просто перезапрашиваем список.
+          // Это гарантирует актуальность данных (имен, последнего сообщения) без сложного мерджа.
+          loadConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  // 2. Load Messages & Subscribe to Realtime
+  // 2. Load Messages & Subscribe to Active Chat
   useEffect(() => {
     if (!activeConvId) return;
 
@@ -30,9 +57,8 @@ export function ChatSystem({ currentUserId }: { currentUserId: string }) {
     };
     loadMsgs();
 
-    // Subscribe
     const channel = supabase
-      .channel('chat_room')
+      .channel(`chat_${activeConvId}`)
       .on(
         'postgres_changes',
         {
@@ -43,15 +69,18 @@ export function ChatSystem({ currentUserId }: { currentUserId: string }) {
         },
         (payload) => {
           const newMsg = payload.new as any;
-          // Add to list
-          setMessages(prev => [...prev, {
-            id: newMsg.id,
-            conversationId: newMsg.conversation_id,
-            senderId: newMsg.sender_id,
-            content: newMsg.content,
-            isRead: newMsg.is_read,
-            createdAt: newMsg.created_at
-          }]);
+          setMessages(prev => {
+            // Избегаем дубликатов (Realtime иногда может прислать то, что мы уже добавили оптимистично, если бы добавляли)
+            if (prev.find(m => m.id === newMsg.id)) return prev;
+            return [...prev, {
+              id: newMsg.id,
+              conversationId: newMsg.conversation_id,
+              senderId: newMsg.sender_id,
+              content: newMsg.content,
+              isRead: newMsg.is_read,
+              createdAt: newMsg.created_at
+            }];
+          });
           scrollToBottom();
         }
       )
@@ -75,7 +104,6 @@ export function ChatSystem({ currentUserId }: { currentUserId: string }) {
 
     try {
       await sendMessage(activeConvId, tempContent);
-      // Optimistic update not needed because Realtime will catch it
     } catch (error) {
       console.error(error);
       alert('Ошибка отправки');
@@ -110,7 +138,7 @@ export function ChatSystem({ currentUserId }: { currentUserId: string }) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h4 className="font-bold text-gray-900 text-sm truncate">{conv.otherUser?.fullName}</h4>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-xs text-gray-500 truncate font-medium">
                       {conv.lastMessage || 'Начните общение...'}
                     </p>
                   </div>
