@@ -1,0 +1,70 @@
+{
+  "jobs": [
+    {
+      "id": "1",
+      "employerId": "emp-1",
+      "title": "Строитель-универсал",
+      "description": "Требуется опытный строитель для внутренней отделки. Работа в Берлине.",
+      "location": "Berlin, Germany",
+      "salaryRange": "15-20 EUR / час",
+      "applicationMethod": "phone",
+      "contactInfo": "+49 123 456 789",
+      "status": "published",
+      "createdAt": "2025-12-03T18:14:45.397Z",
+      "updatedAt": "2025-12-03T18:14:45.397Z"
+    },
+    {
+      "id": "2",
+      "employerId": "emp-1",
+      "title": "Водитель грузовика (Category CE)",
+      "description": "Международные перевозки. Полный соцпакет. Опыт от 1 года.",
+      "location": "Warsaw, Poland",
+      "salaryRange": "2500 - 3000 EUR / месяц",
+      "applicationMethod": "internal_ats",
+      "status": "published",
+      "createdAt": "2025-12-03T18:14:45.397Z",
+      "updatedAt": "2025-12-03T18:14:45.397Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "emp-1",
+      "email": "employer@test.com",
+      "role": "employer",
+      "fullName": "Hans Mueller",
+      "companyName": "Bau Berlin GmbH",
+      "createdAt": "2025-12-03T18:14:45.397Z"
+    },
+    {
+      "id": "seek-1",
+      "email": "seeker@test.com",
+      "role": "seeker",
+      "fullName": "Ivan Petrov",
+      "createdAt": "2025-12-03T18:14:45.397Z"
+    }
+  ],
+  "applications": [
+    {
+      "jobId": "2",
+      "seekerId": "seek-1",
+      "resumeUrl": "",
+      "coverLetter": "",
+      "id": "i6ikjoqdz",
+      "status": "new",
+      "createdAt": "2025-12-03T18:24:21.609Z"
+    }
+  ],
+  "resumes": [
+    {
+      "userId": "seek-1",
+      "title": "Строитель",
+      "about": "Крутой строитель",
+      "skills": "Строительные навыки",
+      "experience": "Большой опыт в строительстве",
+      "isPublic": true,
+      "id": "qycu2aw24",
+      "createdAt": "2025-12-03T18:53:49.566Z",
+      "updatedAt": "2025-12-03T18:53:49.566Z"
+    }
+  ]
+}
