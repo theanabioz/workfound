@@ -69,6 +69,7 @@ export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
     {
       title: 'Система',
       items: [
+        { label: 'Команда', href: '/employer/team', icon: Users }, // New Link
         { label: 'Настройки', href: '/employer/settings', icon: Settings },
       ]
     }

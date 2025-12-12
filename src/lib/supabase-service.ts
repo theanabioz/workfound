@@ -122,12 +122,16 @@ export async function updateCompany(data: Partial<Company>): Promise<void> {
   const company = await getCurrentCompany();
   if (!company) throw new Error('No company found');
 
-  const updates = {
+  const updates: any = {
     name: data.name,
     slug: data.slug,
     website: data.website,
     description: data.description
   };
+
+  if (data.logoUrl) {
+    updates.logo_url = data.logoUrl;
+  }
 
   const { error } = await supabase
     .from('companies')
@@ -167,6 +171,131 @@ export async function getCompanyMembers(): Promise<CompanyMember[]> {
       createdAt: m.profiles.created_at
     } : undefined
   }));
+}
+
+// --- TEAM & INVITATIONS ---
+
+export interface Invitation {
+  id: string;
+  email: string;
+  role: 'admin' | 'recruiter';
+  status: string;
+  createdAt: string;
+  token: string;
+}
+
+export async function getInvitations(): Promise<Invitation[]> {
+  const supabase = await createClient();
+  const company = await getCurrentCompany();
+  if (!company) return [];
+
+  const { data, error } = await supabase
+    .from('company_invitations')
+    .select('*')
+    .eq('company_id', company.id)
+    .eq('status', 'pending');
+
+  if (error) return [];
+
+  return data.map((i: any) => ({
+    id: i.id,
+    email: i.email,
+    role: i.role,
+    status: i.status,
+    createdAt: i.created_at,
+    token: i.token
+  }));
+}
+
+export async function inviteMember(email: string, role: 'admin' | 'recruiter'): Promise<void> {
+  const supabase = await createClient();
+  const company = await getCurrentCompany();
+  if (!company) throw new Error('No company');
+
+  // 1. Генерируем токен
+  const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+  // 2. Сохраняем
+  const { error } = await supabase
+    .from('company_invitations')
+    .insert({
+      company_id: company.id,
+      email,
+      role,
+      token
+    });
+
+  if (error) throw error;
+
+  // 3. Отправляем письмо
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+      to: email,
+      subject: `Приглашение в команду ${company.name}`,
+      html: `
+        <h1>Вас пригласили!</h1>
+        <p>Компания <strong>${company.name}</strong> приглашает вас присоединиться к команде в роли ${role}.</p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Принять приглашение</a>
+      `
+    });
+  } catch (e) {
+    console.error('Email sending failed:', e);
+    // Не выбрасываем ошибку, так как инвайт уже создан, можно скопировать ссылку вручную
+  }
+}
+
+export async function acceptInvitation(token: string): Promise<{ success: boolean; companyName?: string; error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  // 1. Находим инвайт (используем admin client, так как обычный юзер может не иметь прав читать чужие инвайты до вступления)
+  // Но пока попробуем обычным (если RLS настроен только на company_members, то внешний юзер не увидит)
+  // Придется использовать createAdminClient
+  const adminSupabase = createAdminClient();
+
+  const { data: invite } = await adminSupabase
+    .from('company_invitations')
+    .select('*, companies(name)')
+    .eq('token', token)
+    .eq('status', 'pending')
+    .single();
+
+  if (!invite) return { success: false, error: 'Приглашение не найдено или истекло' };
+
+  // 2. Добавляем в участники
+  // Тут тоже нужен админ клиент или специальная политика "insert own membership if token valid"
+  // Проще через админа
+  const { error: memberError } = await adminSupabase
+    .from('company_members')
+    .insert({
+      company_id: invite.company_id,
+      user_id: user.id,
+      role: invite.role
+    });
+
+  if (memberError) {
+    // Если уже участник - игнорируем ошибку
+    if (!memberError.message.includes('unique constraint')) {
+        return { success: false, error: 'Ошибка добавления в команду' };
+    }
+  }
+
+  // 3. Обновляем профиль (если он был seeker, станет employer)
+  await adminSupabase
+    .from('profiles')
+    .update({ role: 'employer' })
+    .eq('id', user.id);
+
+  // 4. Маркируем инвайт как принятый
+  await adminSupabase
+    .from('company_invitations')
+    .update({ status: 'accepted' })
+    .eq('id', invite.id);
+
+  return { success: true, companyName: invite.companies?.name };
 }
 
 // --- JOBS ---
@@ -815,3 +944,39 @@ function mapApplicationFromDB(dbApp: any): Application {
     createdAt: dbApp.created_at
   };
 }
+
+// --- ADMIN ---
+
+export async function getAdminStats() {
+  const supabase = createAdminClient(); // Bypass RLS
+  
+  const [
+    { count: usersCount },
+    { count: jobsCount },
+    { count: appsCount },
+    { count: companiesCount }
+  ] = await Promise.all([
+    supabase.from('profiles').select('*', { count: 'exact', head: true }),
+    supabase.from('jobs').select('*', { count: 'exact', head: true }),
+    supabase.from('applications').select('*', { count: 'exact', head: true }),
+    supabase.from('companies').select('*', { count: 'exact', head: true })
+  ]);
+
+  return {
+    users: usersCount || 0,
+    jobs: jobsCount || 0,
+    applications: appsCount || 0,
+    companies: companiesCount || 0
+  };
+}
+
+export async function getAllUsers() {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+  return data || [];
+}
+
+

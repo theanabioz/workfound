@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { getCurrentUser, updateProfile, getCurrentCompany, updateCompany } from '@/lib/supabase-service';
 import { UserProfile, Company } from '@/types';
-import { Save, User, Building2 } from 'lucide-react';
+import { Save, User, Building2, Upload, Loader2 } from 'lucide-react';
+import { uploadAvatar } from '@/utils/upload';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -20,6 +21,10 @@ export default function SettingsPage() {
   const [companySlug, setCompanySlug] = useState('');
   const [companyWebsite, setCompanyWebsite] = useState('');
   const [companyDesc, setCompanyDesc] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  
+  // Upload State
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -40,6 +45,7 @@ export default function SettingsPage() {
         setCompanySlug(currentCompany.slug || '');
         setCompanyWebsite(currentCompany.website || '');
         setCompanyDesc(currentCompany.description || '');
+        setLogoUrl(currentCompany.logoUrl || '');
       }
       setLoading(false);
     };
@@ -58,9 +64,28 @@ export default function SettingsPage() {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    if (!company) return alert('Сначала сохраните компанию');
+
+    const file = e.target.files[0];
+    setUploading(true);
+
+    try {
+      // Path: company_id/logo-timestamp
+      const path = `${company.id}/logo-${Date.now()}`;
+      const url = await uploadAvatar(file, path);
+      setLogoUrl(url);
+    } catch (error) {
+      console.error(error);
+      alert('Ошибка загрузки');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSaveCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Saving company...', company);
     if (!company) {
       console.error('No company found in state');
       return;
@@ -70,9 +95,9 @@ export default function SettingsPage() {
         name: companyName,
         slug: companySlug,
         website: companyWebsite,
-        description: companyDesc
+        description: companyDesc,
+        logoUrl
       });
-      console.log('Success update');
       alert('Компания обновлена!');
     } catch (error) {
       console.error('Update failed:', error);
@@ -149,6 +174,25 @@ export default function SettingsPage() {
             </form>
           ) : (
             <form onSubmit={handleSaveCompany} className="space-y-6">
+              {/* Logo Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Логотип</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden bg-gray-50">
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <Building2 className="w-8 h-8 text-gray-300" />
+                    )}
+                  </div>
+                  <label className="cursor-pointer bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                    {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    {uploading ? 'Загрузка...' : 'Загрузить'}
+                    <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
+                  </label>
+                </div>
+              </div>
+
               {/* Company Form */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Название компании</label>

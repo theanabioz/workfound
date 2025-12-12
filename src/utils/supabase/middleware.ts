@@ -41,8 +41,13 @@ export async function updateSession(request: NextRequest) {
   // 2. Правила для НЕ авторизованных пользователей
   if (!user) {
     // Если пытаются зайти в защищенные разделы
-    if (path.startsWith('/employer') || path.startsWith('/seeker')) {
+    if (path.startsWith('/employer') || path.startsWith('/seeker') || path.startsWith('/admin')) {
       const url = request.nextUrl.clone()
+      if (path.startsWith('/admin')) {
+         // Админку скрываем полностью (404), чтобы не палить контору
+         url.pathname = '/404'
+         return NextResponse.rewrite(url)
+      }
       url.pathname = '/login'
       return NextResponse.redirect(url)
     }
@@ -89,16 +94,21 @@ export async function updateSession(request: NextRequest) {
       }
 
       // Если Работодатель лезет к Соискателям
-      if (path.startsWith('/seeker') && role !== 'employer' && role !== 'seeker') {
-        // Тут нюанс: seeker может заходить в /seeker. А employer? 
-        // Логично, что employer не должен видеть дашборд соискателя.
-        // Но пока оставим проверку простой:
-      }
-
       if (path.startsWith('/seeker') && role === 'employer') {
          const url = request.nextUrl.clone()
          url.pathname = '/employer/dashboard'
          return NextResponse.redirect(url)
+      }
+
+      // ADMIN PROTECTION
+      if (path.startsWith('/admin')) {
+        if (role !== 'admin') {
+          // Для обычных смертных этой страницы не существует (404)
+          // Мы делаем rewrite на несуществующую страницу, чтобы Next.js показал 404
+          const url = request.nextUrl.clone()
+          url.pathname = '/404' 
+          return NextResponse.rewrite(url)
+        }
       }
     }
   }

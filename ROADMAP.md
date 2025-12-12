@@ -2,7 +2,7 @@
 
 ## ✅ Phase 1: The Skeleton (Core Logic)
 - [x] **Project Setup:** Next.js, TypeScript, Tailwind.
-- [x] **Authentication:** Login/Register with Role selection (Seeker/Employer).
+- [x] **Authentication:** Login/Register, Role selection, **Password Reset**.
 - [x] **Database:** Supabase (Profiles, Jobs, Applications, Resumes).
 - [x] **Basic Flows:** Create Job, Apply, View Applications.
 
@@ -13,32 +13,26 @@
 - [x] **Search:** Basic title search.
 
 ## ✅ Phase 3: Advanced Tools (ATS Core)
-### Seeker Tools
-- [x] **Saved Jobs (Favorites):** Bookmark jobs.
-- [x] **History Table:** Simple list of applied jobs with status.
-- [x] **Job Alerts (Subscriptions):** Email notifications for new jobs (via Resend).
+- [x] **Seeker Tools:** Saved Jobs, History Table, Job Alerts (Email).
+- [x] **Employer Tools:** Kanban Board, Screening Questions, Candidate Search, Notes, Calendar.
 
-### Employer Tools
-- [x] **Kanban Board:** Vertical drag & drop pipeline for applications.
-- [x] **Filters:** Filter Kanban by specific Job.
-- [x] **Screening Questions (Knock-out):** Custom questions (Yes/No) to auto-reject unqualified candidates.
-- [x] **Candidate Search:** Search resumes by skills, location.
-- [x] **Saved Candidates:** Bookmark interesting profiles.
-- [x] **Internal Notes:** Private notes on candidates (in modal).
-- [x] **Calendar:** Schedule interviews (Apple-style grid).
-
-## ✅ Phase 4: Communication & Realtime
-- [x] **Messaging System:** Real-time chat between Employer and Seeker.
-- [x] **Email Notifications:** Transactional emails via Resend (Alerts implemented).
+## ✅ Phase 4: Communication
+- [x] **Messaging System:** Real-time chat using Supabase.
+- [x] **Email Notifications:** Transactional emails via Resend (Alerts, Invites).
 
 ## ✅ Phase 5: Business & Branding
-- [x] **Company Architecture:** Jobs linked to Companies, not Users.
-- [x] **Company Profile:** Public page (`/company/[slug]`) with rich media.
-- [x] **Settings:** Manage Company Name, Slug, Website.
+- [x] **Company Architecture:** Multi-user companies.
+- [x] **Company Profile:** Public page with logo.
+- [x] **Team Management:** Invite system via Email.
+- [x] **File Storage:** Avatar/Logo uploads.
 
-## 🚧 Phase 6: Scaling & Monetization (NEXT STEPS)
-- [ ] **File Storage:** Upload real avatars and PDF resumes (Supabase Storage). Currently using placeholders.
-- [ ] **Team Management:** Invite colleagues to manage the company (`company_members`).
-- [ ] **Billing & Plans:** Stripe integration for Premium Jobs.
+## ✅ Phase 7: Super Admin Panel ("God Mode")
+- [x] **Security:** Protected route `/admin` (returns 404 for non-admins).
+- [x] **Dashboard:** Global metrics.
+- [x] **User Management:** List all users.
+
+## 🚧 Phase 6: Scaling & Intelligence (NEXT STEPS)
+- [ ] **Resume Upload:** Upload PDF resumes to Storage (Bucket exists, UI needed).
+- [ ] **Billing & Plans:** Stripe integration.
 - [ ] **AI:** Job description generator.
-- [ ] **Analytics:** Funnel efficiency, time-to-hire.
+- [ ] **Analytics:** Advanced Funnel charts (Recharts).
