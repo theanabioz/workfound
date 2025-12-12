@@ -1,33 +1,34 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { createAdminClient } from '@/utils/supabase/admin'; // Import Admin Client
+import { createAdminClient } from '@/utils/supabase/admin';
 import { Job, Application, Resume, UserProfile, JobQuestion, QuestionAnswer, Company, CompanyMember, CalendarEvent } from '@/types';
 import { redirect } from 'next/navigation';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const COUNTRY_MAP: Record<string, string> = {
+  'de': 'Германия',
+  'pl': 'Польша',
+  'lt': 'Литва',
+  'nl': 'Нидерланды',
+  'ee': 'Эстония',
+  'cz': 'Чехия'
+};
+
 // --- HELPER: Alerts ---
 async function checkAndSendAlerts(job: Job) {
   console.log(`[ALERTS] Checking alerts for job: "${job.title}" in "${job.location}"`);
-  // Use ADMIN client to bypass RLS
   const supabase = createAdminClient();
   
-  // 1. Загружаем ВСЕ алерты (для дебага, в проде так делать нельзя, нужен Full Text Search)
   const { data: allAlerts } = await supabase
     .from('job_alerts')
     .select('*, profiles(email)');
 
-  if (!allAlerts) {
-    console.log('[ALERTS] No alerts found in DB');
-    return;
-  }
+  if (!allAlerts) return;
 
-  // 2. Фильтруем вручную (чтобы точно понять логику)
   const matchingAlerts = allAlerts.filter((alert: any) => {
-    console.log(`[ALERTS DEBUG] Alert: "${alert.keywords}" Location: "${alert.location}" vs Job: "${job.title}" Loc: "${job.location}"`);
-    
     const keywordMatch = 
       (alert.keywords && job.title.toLowerCase().includes(alert.keywords.toLowerCase())) || 
       (alert.keywords && alert.keywords.toLowerCase().includes(job.title.toLowerCase()));
@@ -36,26 +37,17 @@ async function checkAndSendAlerts(job: Job) {
       !alert.location || 
       job.location.toLowerCase().includes(alert.location.toLowerCase());
 
-    if (keywordMatch && locationMatch) {
-      console.log(`[ALERTS] Match found! User: ${alert.profiles?.email}, Keywords: ${alert.keywords}`);
-      return true;
-    }
-    return false;
+    return keywordMatch && locationMatch;
   });
 
-  if (matchingAlerts.length === 0) {
-    console.log('[ALERTS] No matching alerts found after filtering');
-    return;
-  }
+  console.log(`[ALERTS] Found ${matchingAlerts.length} matches.`);
 
-  // 3. Отправляем
   for (const alert of matchingAlerts) {
     const email = alert.profiles?.email;
     if (!email) continue;
 
     try {
-      console.log(`[ALERTS] Sending email to ${email}...`);
-      const { error } = await resend.emails.send({
+      await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
         to: email,
         subject: `Новая вакансия: ${job.title}`,
@@ -70,14 +62,8 @@ async function checkAndSendAlerts(job: Job) {
           </div>
         `
       });
-      
-      if (error) {
-        console.error('[ALERTS] Resend Error:', error);
-      } else {
-        console.log(`[ALERTS] Email sent successfully to ${email}`);
-      }
     } catch (error) {
-      console.error('[ALERTS] Failed to send alert email:', error);
+      console.error('[ALERTS] Error:', error);
     }
   }
 }
@@ -87,20 +73,14 @@ async function checkAndSendAlerts(job: Job) {
 export async function getCurrentCompany(): Promise<Company | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    // console.log('getCurrentCompany: No user');
-    return null;
-  }
+  if (!user) return null;
 
-  // Находим компанию, где юзер является участником
   const { data: members, error } = await supabase
     .from('company_members')
     .select('company_id, companies(*)')
     .eq('user_id', user.id);
 
-  if (error || !members || members.length === 0) {
-    return null;
-  }
+  if (error || !members || members.length === 0) return null;
 
   const member = members[0];
   if (!member.companies) return null;
@@ -128,10 +108,7 @@ export async function updateCompany(data: Partial<Company>): Promise<void> {
     website: data.website,
     description: data.description
   };
-
-  if (data.logoUrl) {
-    updates.logo_url = data.logoUrl;
-  }
+  if (data.logoUrl) updates.logo_url = data.logoUrl;
 
   const { error } = await supabase
     .from('companies')
@@ -148,10 +125,7 @@ export async function getCompanyMembers(): Promise<CompanyMember[]> {
 
   const { data, error } = await supabase
     .from('company_members')
-    .select(`
-      *,
-      profiles(*)
-    `)
+    .select(`*, profiles(*)`)
     .eq('company_id', company.id);
 
   if (error) return [];
@@ -173,187 +147,74 @@ export async function getCompanyMembers(): Promise<CompanyMember[]> {
   }));
 }
 
-// --- TEAM & INVITATIONS ---
-
-export interface Invitation {
-  id: string;
-  email: string;
-  role: 'admin' | 'recruiter';
-  status: string;
-  createdAt: string;
-  token: string;
+export async function getCompanyBySlug(slug: string): Promise<Company | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('companies').select('*').eq('slug', slug).single();
+  if (error || !data) return null;
+  return { id: data.id, name: data.name, slug: data.slug, logoUrl: data.logo_url, website: data.website, description: data.description, createdAt: data.created_at };
 }
 
-export async function getInvitations(): Promise<Invitation[]> {
+export async function getCompanyJobsPublic(companyId: string): Promise<Job[]> {
   const supabase = await createClient();
-  const company = await getCurrentCompany();
-  if (!company) return [];
-
-  const { data, error } = await supabase
-    .from('company_invitations')
-    .select('*')
-    .eq('company_id', company.id)
-    .eq('status', 'pending');
-
+  const { data, error } = await supabase.from('jobs').select('*').eq('company_id', companyId).eq('status', 'published').order('created_at', { ascending: false });
   if (error) return [];
-
-  return data.map((i: any) => ({
-    id: i.id,
-    email: i.email,
-    role: i.role,
-    status: i.status,
-    createdAt: i.created_at,
-    token: i.token
-  }));
-}
-
-export async function inviteMember(email: string, role: 'admin' | 'recruiter'): Promise<void> {
-  const supabase = await createClient();
-  const company = await getCurrentCompany();
-  if (!company) throw new Error('No company');
-
-  // 1. Генерируем токен
-  const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-  // 2. Сохраняем
-  const { error } = await supabase
-    .from('company_invitations')
-    .insert({
-      company_id: company.id,
-      email,
-      role,
-      token
-    });
-
-  if (error) throw error;
-
-  // 3. Отправляем письмо
-  try {
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
-      to: email,
-      subject: `Приглашение в команду ${company.name}`,
-      html: `
-        <h1>Вас пригласили!</h1>
-        <p>Компания <strong>${company.name}</strong> приглашает вас присоединиться к команде в роли ${role}.</p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Принять приглашение</a>
-      `
-    });
-  } catch (e) {
-    console.error('Email sending failed:', e);
-    // Не выбрасываем ошибку, так как инвайт уже создан, можно скопировать ссылку вручную
-  }
-}
-
-export async function acceptInvitation(token: string): Promise<{ success: boolean; companyName?: string; error?: string }> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) return { success: false, error: 'Not authenticated' };
-
-  // 1. Находим инвайт (используем admin client, так как обычный юзер может не иметь прав читать чужие инвайты до вступления)
-  // Но пока попробуем обычным (если RLS настроен только на company_members, то внешний юзер не увидит)
-  // Придется использовать createAdminClient
-  const adminSupabase = createAdminClient();
-
-  const { data: invite } = await adminSupabase
-    .from('company_invitations')
-    .select('*, companies(name)')
-    .eq('token', token)
-    .eq('status', 'pending')
-    .single();
-
-  if (!invite) return { success: false, error: 'Приглашение не найдено или истекло' };
-
-  // 2. Добавляем в участники
-  // Тут тоже нужен админ клиент или специальная политика "insert own membership if token valid"
-  // Проще через админа
-  const { error: memberError } = await adminSupabase
-    .from('company_members')
-    .insert({
-      company_id: invite.company_id,
-      user_id: user.id,
-      role: invite.role
-    });
-
-  if (memberError) {
-    // Если уже участник - игнорируем ошибку
-    if (!memberError.message.includes('unique constraint')) {
-        return { success: false, error: 'Ошибка добавления в команду' };
-    }
-  }
-
-  // 3. Обновляем профиль (если он был seeker, станет employer)
-  await adminSupabase
-    .from('profiles')
-    .update({ role: 'employer' })
-    .eq('id', user.id);
-
-  // 4. Маркируем инвайт как принятый
-  await adminSupabase
-    .from('company_invitations')
-    .update({ status: 'accepted' })
-    .eq('id', invite.id);
-
-  return { success: true, companyName: invite.companies?.name };
+  return data.map(mapJobFromDB);
 }
 
 // --- JOBS ---
 
-export async function getJobs(query?: string): Promise<Job[]> {
+export interface JobFilters {
+  query?: string;
+  country?: string;
+  city?: string;
+  minSalary?: number;
+  salaryPeriod?: 'hour' | 'month';
+  benefits?: string[];
+}
+
+export async function getJobs(filters: JobFilters | string = {}): Promise<Job[]> {
   const supabase = await createClient();
   
+  const actualFilters = typeof filters === 'string' ? { query: filters } : filters;
+
   let queryBuilder = supabase
     .from('jobs')
     .select('*')
     .eq('status', 'published')
     .order('created_at', { ascending: false });
 
-  if (query) {
-    queryBuilder = queryBuilder.ilike('title', `%${query}%`);
+  if (actualFilters.query) {
+    queryBuilder = queryBuilder.ilike('title', `%${actualFilters.query}%`);
+  }
+  
+  if (actualFilters.country && actualFilters.country !== 'Все страны' && actualFilters.country !== 'all') {
+    const countryName = COUNTRY_MAP[actualFilters.country] || actualFilters.country;
+    queryBuilder = queryBuilder.eq('country', countryName);
+  }
+
+  if (actualFilters.city) {
+    queryBuilder = queryBuilder.ilike('city', `%${actualFilters.city}%`);
+  }
+
+  if (actualFilters.minSalary) {
+    queryBuilder = queryBuilder.gte('salary_min', actualFilters.minSalary);
+  }
+
+  if (actualFilters.salaryPeriod) {
+    queryBuilder = queryBuilder.eq('salary_period', actualFilters.salaryPeriod);
+  }
+
+  if (actualFilters.benefits && actualFilters.benefits.length > 0) {
+    queryBuilder = queryBuilder.contains('benefits', actualFilters.benefits);
   }
   
   const { data, error } = await queryBuilder;
 
   if (error) {
-    console.error('Error fetching jobs:', error);
+    console.error('Error fetching jobs:', JSON.stringify(error, null, 2));
     return [];
   }
 
-  return data.map(mapJobFromDB);
-}
-
-export async function getCompanyBySlug(slug: string): Promise<Company | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('companies')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-
-  if (error || !data) return null;
-
-  return {
-    id: data.id,
-    name: data.name,
-    slug: data.slug,
-    logoUrl: data.logo_url,
-    website: data.website,
-    description: data.description,
-    createdAt: data.created_at
-  };
-}
-
-export async function getCompanyJobsPublic(companyId: string): Promise<Job[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('jobs')
-    .select('*')
-    .eq('company_id', companyId)
-    .eq('status', 'published')
-    .order('created_at', { ascending: false });
-
-  if (error) return [];
   return data.map(mapJobFromDB);
 }
 
@@ -364,7 +225,8 @@ export async function getJobById(id: string): Promise<Job | undefined> {
     .from('jobs')
     .select(`
       *,
-      questions:job_questions(*)
+      questions:job_questions(*),
+      companies(*)
     `)
     .eq('id', id)
     .single();
@@ -372,6 +234,18 @@ export async function getJobById(id: string): Promise<Job | undefined> {
   if (error || !data) return undefined;
 
   const job = mapJobFromDB(data);
+  
+  if (data.companies) {
+    // Временно добавим данные компании в объект job (нужно обновить тип Job, но можно хаком)
+    (job as any).company = {
+      id: data.companies.id,
+      name: data.companies.name,
+      logoUrl: data.companies.logo_url,
+      slug: data.companies.slug,
+      website: data.companies.website,
+      description: data.companies.description
+    };
+  }
   
   if (data.questions) {
     job.questions = data.questions.map((q: any) => ({
@@ -388,24 +262,15 @@ export async function getJobById(id: string): Promise<Job | undefined> {
 
 export async function getEmployerJobs(userId: string): Promise<Job[]> {
   const supabase = await createClient();
-  
   const company = await getCurrentCompany();
-  
   let query = supabase.from('jobs').select('*').order('created_at', { ascending: false });
-
   if (company) {
     query = query.eq('company_id', company.id);
   } else {
     query = query.eq('employer_id', userId);
   }
-
   const { data, error } = await query;
-
-  if (error) {
-    console.error(error);
-    return [];
-  }
-
+  if (error) { console.error(error); return []; }
   return data.map(mapJobFromDB);
 }
 
@@ -416,13 +281,26 @@ export async function createJob(jobData: Omit<Job, 'id' | 'createdAt' | 'updated
 
   const company = await getCurrentCompany();
 
+  // Auto-generate salary range if user didn't provide text but provided numbers
+  let displaySalary = jobData.salaryRange;
+  if (!displaySalary && jobData.salaryMin) {
+    displaySalary = `${jobData.salaryMin}`;
+    if (jobData.salaryMax) displaySalary += ` - ${jobData.salaryMax}`;
+  }
+
   const dbJob = {
     employer_id: user.id,
     company_id: company?.id,
     title: jobData.title,
     description: jobData.description,
     location: jobData.location,
-    salary_range: jobData.salaryRange,
+    country: jobData.country,
+    city: jobData.city,
+    salary_range: displaySalary || jobData.salaryRange, // Use auto or manual
+    salary_min: jobData.salaryMin,
+    salary_max: jobData.salaryMax,
+    salary_period: jobData.salaryPeriod || 'month',
+    benefits: jobData.benefits,
     application_method: jobData.applicationMethod,
     contact_info: jobData.contactInfo,
     status: jobData.status || 'published'
@@ -443,17 +321,9 @@ export async function createJob(jobData: Omit<Job, 'id' | 'createdAt' | 'updated
       correct_answer: q.correctAnswer,
       is_disqualifying: q.isDisqualifying
     }));
-
-    const { error: qError } = await supabase
-      .from('job_questions')
-      .insert(questionsToInsert);
-      
-    if (qError) console.error('Error saving questions:', qError);
+    await supabase.from('job_questions').insert(questionsToInsert);
   }
 
-  // NEW: Send Alerts
-  // Мы не ждем завершения (fire and forget), чтобы не тормозить UI
-  // Но в Server Actions лучше дождаться, иначе Next может убить процесс
   const finalJob = mapJobFromDB(savedJob);
   await checkAndSendAlerts(finalJob);
 
@@ -478,37 +348,17 @@ export async function getJobQuestions(jobId: string): Promise<JobQuestion[]> {
 export async function getCurrentUser(): Promise<UserProfile | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
   if (!user) return null;
-
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-
   if (!profile) return null;
-
-  return {
-    id: profile.id,
-    email: profile.email,
-    role: profile.role as any,
-    fullName: profile.full_name,
-    companyName: profile.company_name,
-    phone: profile.phone,
-    createdAt: profile.created_at
-  };
+  return { id: profile.id, email: profile.email, role: profile.role as any, fullName: profile.full_name, companyName: profile.company_name, phone: profile.phone, createdAt: profile.created_at };
 }
 
 export async function updateProfile(data: Partial<UserProfile>): Promise<void> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
-
-  const updates = {
-    full_name: data.fullName,
-    company_name: data.companyName,
-    phone: data.phone,
-  };
-
-  const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
-  if (error) throw error;
+  await supabase.from('profiles').update({ full_name: data.fullName, company_name: data.companyName, phone: data.phone }).eq('id', user.id);
 }
 
 // --- RESUMES ---
@@ -531,28 +381,16 @@ export async function createResume(resumeData: Omit<Resume, 'id' | 'createdAt' |
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
-
-  const dbResume = {
-    user_id: user.id,
-    title: resumeData.title,
-    about: resumeData.about,
-    skills: resumeData.skills,
-    experience: resumeData.experience,
-    is_public: resumeData.isPublic
-  };
-
-  const { data, error } = await supabase.from('resumes').insert(dbResume).select().single();
+  const { data, error } = await supabase.from('resumes').insert({ user_id: user.id, title: resumeData.title, about: resumeData.about, skills: resumeData.skills, experience: resumeData.experience, is_public: resumeData.isPublic }).select().single();
   if (error) throw error;
   return mapResumeFromDB(data);
 }
 
 export async function searchResumes(query: string): Promise<Resume[]> {
   const supabase = await createClient();
-  let queryBuilder = supabase.from('resumes').select('*').eq('is_public', true).order('created_at', { ascending: false });
-  if (query) {
-    queryBuilder = queryBuilder.or(`title.ilike.%${query}%,skills.ilike.%${query}%`);
-  }
-  const { data, error } = await queryBuilder;
+  let q = supabase.from('resumes').select('*').eq('is_public', true).order('created_at', { ascending: false });
+  if (query) q = q.or(`title.ilike.%${query}%,skills.ilike.%${query}%`);
+  const { data, error } = await q;
   if (error) return [];
   return data.map(mapResumeFromDB);
 }
@@ -563,122 +401,54 @@ export async function submitApplication(appData: Omit<Application, 'id' | 'statu
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
-
   let status = 'new';
   const { data: questions } = await supabase.from('job_questions').select('*').eq('job_id', appData.jobId);
-
   if (questions && appData.answers) {
     for (const q of questions) {
       if (q.is_disqualifying && q.correct_answer) {
         const userAnswer = appData.answers.find(a => a.questionId === q.id)?.answerText;
-        if (userAnswer !== q.correct_answer) {
-          status = 'rejected';
-          break; 
-        }
+        if (userAnswer !== q.correct_answer) { status = 'rejected'; break; }
       }
     }
   }
-
-  const dbApp = {
-    job_id: appData.jobId,
-    seeker_id: user.id,
-    resume_id: appData.resumeId,
-    cover_letter: appData.coverLetter,
-    resume_url: appData.resumeUrl,
-    status: status
-  };
-
-  const { data: savedApp, error } = await supabase.from('applications').insert(dbApp).select().single();
+  const { data: savedApp, error } = await supabase.from('applications').insert({ job_id: appData.jobId, seeker_id: user.id, resume_id: appData.resumeId, cover_letter: appData.coverLetter, resume_url: appData.resumeUrl, status }).select().single();
   if (error) throw error;
-
   if (appData.answers && appData.answers.length > 0) {
-    const answersToInsert = appData.answers.map(a => ({
-      application_id: savedApp.id,
-      question_id: a.questionId,
-      answer_text: a.answerText
-    }));
-    await supabase.from('application_answers').insert(answersToInsert);
+    await supabase.from('application_answers').insert(appData.answers.map(a => ({ application_id: savedApp.id, question_id: a.questionId, answer_text: a.answerText })));
   }
-
   return mapApplicationFromDB(savedApp);
 }
 
 export async function getEmployerApplications(employerId: string): Promise<(Application & { jobTitle: string; resume?: Resume })[]> {
   const supabase = await createClient();
-  
   const { data: member } = await supabase.from('company_members').select('company_id').eq('user_id', employerId).single();
-  
   if (!member) return [];
-
-  const { data, error } = await supabase
-    .from('applications')
-    .select(`
-      *,
-      jobs ( title, employer_id, company_id ),
-      resumes ( * )
-    `)
-    .eq('jobs.company_id', member.company_id);
-
+  const { data, error } = await supabase.from('applications').select(`*, jobs ( title, employer_id, company_id ), resumes ( * )`).eq('jobs.company_id', member.company_id);
   if (error) return [];
-
-  return data.map((item: any) => ({
-    id: item.id,
-    jobId: item.job_id,
-    seekerId: item.seeker_id,
-    status: item.status,
-    resumeId: item.resume_id,
-    resumeUrl: item.resume_url,
-    coverLetter: item.cover_letter,
-    createdAt: item.created_at,
-    jobTitle: item.jobs?.title || 'Unknown',
-    resume: item.resumes ? mapResumeFromDB(item.resumes) : undefined
-  }));
+  return data.map((item: any) => ({ id: item.id, jobId: item.job_id, seekerId: item.seeker_id, status: item.status, resumeId: item.resume_id, resumeUrl: item.resume_url, coverLetter: item.cover_letter, createdAt: item.created_at, jobTitle: item.jobs?.title || 'Unknown', resume: item.resumes ? mapResumeFromDB(item.resumes) : undefined }));
 }
 
 export async function getSeekerApplications(seekerId: string): Promise<(Application & { job: Job })[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('applications')
-    .select(`*, jobs ( * )`)
-    .eq('seeker_id', seekerId)
-    .order('created_at', { ascending: false });
-
+  const { data, error } = await supabase.from('applications').select(`*, jobs ( * )`).eq('seeker_id', seekerId).order('created_at', { ascending: false });
   if (error) return [];
-
-  return data.map((item: any) => ({
-    id: item.id,
-    jobId: item.job_id,
-    seekerId: item.seeker_id,
-    status: item.status,
-    resumeId: item.resume_id,
-    resumeUrl: item.resume_url,
-    coverLetter: item.cover_letter,
-    createdAt: item.created_at,
-    job: mapJobFromDB(item.jobs)
-  }));
+  return data.map((item: any) => ({ id: item.id, jobId: item.job_id, seekerId: item.seeker_id, status: item.status, resumeId: item.resume_id, resumeUrl: item.resume_url, coverLetter: item.cover_letter, createdAt: item.created_at, job: mapJobFromDB(item.jobs) }));
 }
 
 export async function updateApplicationStatus(appId: string, status: string): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase.from('applications').update({ status }).eq('id', appId);
-  if (error) throw error;
+  await supabase.from('applications').update({ status }).eq('id', appId);
 }
 
-// --- CHAT ---
+// --- CHAT, CALENDAR, NOTES, SAVED ---
 
 export async function startConversation(otherUserId: string, jobId?: string): Promise<string> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-  let employerId, seekerId;
-  if (profile?.role === 'employer') {
-    employerId = user.id;
-    seekerId = otherUserId;
-  } else {
-    employerId = otherUserId;
-    seekerId = user.id;
-  }
+  let employerId = profile?.role === 'employer' ? user.id : otherUserId;
+  let seekerId = profile?.role === 'employer' ? otherUserId : user.id;
   const { data: existing } = await supabase.from('conversations').select('id').eq('employer_id', employerId).eq('seeker_id', seekerId).single();
   if (existing) return existing.id;
   const { data: newConv, error } = await supabase.from('conversations').insert({ employer_id: employerId, seeker_id: seekerId, job_id: jobId }).select().single();
@@ -696,15 +466,7 @@ export async function getConversations(): Promise<Conversation[]> {
     const isMeEmployer = item.employer_id === user.id;
     const other = isMeEmployer ? item.seeker : item.employer;
     const lastMsg = item.messages?.sort((a:any, b:any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-    return {
-      id: item.id,
-      employerId: item.employer_id,
-      seekerId: item.seeker_id,
-      jobId: item.job_id,
-      updatedAt: item.updated_at,
-      otherUser: { fullName: other?.full_name || 'Unknown', role: other?.role },
-      lastMessage: lastMsg?.content
-    };
+    return { id: item.id, employerId: item.employer_id, seekerId: item.seeker_id, jobId: item.job_id, updatedAt: item.updated_at, otherUser: { fullName: other?.full_name || 'Unknown', role: other?.role }, lastMessage: lastMsg?.content };
   });
 }
 
@@ -724,8 +486,6 @@ export async function sendMessage(conversationId: string, content: string): Prom
   await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId);
   return { id: data.id, conversationId: data.conversation_id, senderId: data.sender_id, content: data.content, isRead: data.is_read, createdAt: data.created_at };
 }
-
-// --- CALENDAR ---
 
 export async function getEvents(): Promise<CalendarEvent[]> {
   const supabase = await createClient();
@@ -751,8 +511,6 @@ export async function deleteEvent(id: string): Promise<void> {
   await supabase.from('calendar_events').delete().eq('id', id);
 }
 
-// --- NOTES ---
-
 export async function getNotes(applicationId: string): Promise<Note[]> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('application_notes').select(`*, author:profiles(full_name)`).eq('application_id', applicationId).order('created_at', { ascending: true });
@@ -774,84 +532,13 @@ export async function deleteNote(noteId: string): Promise<void> {
   await supabase.from('application_notes').delete().eq('id', noteId);
 }
 
-// --- JOB ALERTS (NEW) ---
-
-export interface JobAlert {
-  id: string;
-  keywords?: string;
-  location?: string;
-  frequency: string;
-  createdAt: string;
-}
-
-export async function createJobAlert(alertData: { keywords?: string; location?: string }): Promise<JobAlert> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { data, error } = await supabase
-    .from('job_alerts')
-    .insert({
-      user_id: user.id,
-      keywords: alertData.keywords,
-      location: alertData.location
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-
-  return {
-    id: data.id,
-    keywords: data.keywords,
-    location: data.location,
-    frequency: data.frequency,
-    createdAt: data.created_at
-  };
-}
-
-export async function getJobAlerts(): Promise<JobAlert[]> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('job_alerts')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (error) return [];
-
-  return data.map((a: any) => ({
-    id: a.id,
-    keywords: a.keywords,
-    location: a.location,
-    frequency: a.frequency,
-    createdAt: a.created_at
-  }));
-}
-
-export async function deleteJobAlert(id: string): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase.from('job_alerts').delete().eq('id', id);
-  if (error) throw error;
-}
-
-// --- SAVED ITEMS ---
-
 export async function toggleSavedItem(itemId: string, type: 'job' | 'resume'): Promise<boolean> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
   const { data: existing } = await supabase.from('saved_items').select('id').eq('user_id', user.id).eq('item_id', itemId).eq('item_type', type).single();
-  if (existing) {
-    await supabase.from('saved_items').delete().eq('id', existing.id);
-    return false;
-  } else {
-    await supabase.from('saved_items').insert({ user_id: user.id, item_id: itemId, item_type: type });
-    return true;
-  }
+  if (existing) { await supabase.from('saved_items').delete().eq('id', existing.id); return false; }
+  else { await supabase.from('saved_items').insert({ user_id: user.id, item_id: itemId, item_type: type }); return true; }
 }
 
 export async function checkIsSaved(itemId: string): Promise<boolean> {
@@ -900,16 +587,122 @@ export async function getSavedResumes(): Promise<Resume[]> {
   return (resumes || []).map(mapResumeFromDB);
 }
 
-// --- MAPPERS (Duplicated for safety) ---
+// --- TEAM & INVITATIONS ---
+
+export interface Invitation {
+  id: string;
+  email: string;
+  role: 'admin' | 'recruiter';
+  status: string;
+  createdAt: string;
+  token: string;
+}
+
+export async function getInvitations(): Promise<Invitation[]> {
+  const supabase = await createClient();
+  const company = await getCurrentCompany();
+  if (!company) return [];
+  const { data, error } = await supabase.from('company_invitations').select('*').eq('company_id', company.id).eq('status', 'pending');
+  if (error) return [];
+  return data.map((i: any) => ({ id: i.id, email: i.email, role: i.role, status: i.status, createdAt: i.created_at, token: i.token }));
+}
+
+export async function inviteMember(email: string, role: 'admin' | 'recruiter'): Promise<void> {
+  const supabase = await createClient();
+  const company = await getCurrentCompany();
+  if (!company) throw new Error('No company');
+  const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const { error } = await supabase.from('company_invitations').insert({ company_id: company.id, email, role, token });
+  if (error) throw error;
+  try {
+    await resend.emails.send({ from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev', to: email, subject: `Приглашение в команду ${company.name}`, html: `<h1>Вас пригласили!</h1><p>Компания <strong>${company.name}</strong> приглашает вас.</p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}">Принять</a>` });
+  } catch (e) { console.error(e); }
+}
+
+export async function acceptInvitation(token: string): Promise<{ success: boolean; companyName?: string; error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+  const adminSupabase = createAdminClient();
+  const { data: invite } = await adminSupabase.from('company_invitations').select('*, companies(name)').eq('token', token).eq('status', 'pending').single();
+  if (!invite) return { success: false, error: 'Приглашение не найдено' };
+  const { error: memberError } = await adminSupabase.from('company_members').insert({ company_id: invite.company_id, user_id: user.id, role: invite.role });
+  if (memberError && !memberError.message.includes('unique constraint')) return { success: false, error: 'Ошибка добавления' };
+  await adminSupabase.from('profiles').update({ role: 'employer' }).eq('id', user.id);
+  await adminSupabase.from('company_invitations').update({ status: 'accepted' }).eq('id', invite.id);
+  return { success: true, companyName: invite.companies?.name };
+}
+
+// --- JOB ALERTS ---
+
+export interface JobAlert {
+  id: string;
+  keywords?: string;
+  location?: string;
+  frequency: string;
+  createdAt: string;
+}
+
+export async function createJobAlert(alertData: { keywords?: string; location?: string }): Promise<JobAlert> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const { data, error } = await supabase.from('job_alerts').insert({ user_id: user.id, keywords: alertData.keywords, location: alertData.location }).select().single();
+  if (error) throw error;
+  return { id: data.id, keywords: data.keywords, location: data.location, frequency: data.frequency, createdAt: data.created_at };
+}
+
+export async function getJobAlerts(): Promise<JobAlert[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase.from('job_alerts').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+  if (error) return [];
+  return data.map((a: any) => ({ id: a.id, keywords: a.keywords, location: a.location, frequency: a.frequency, createdAt: a.created_at }));
+}
+
+export async function deleteJobAlert(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('job_alerts').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// --- ADMIN ---
+
+export async function getAdminStats() {
+  const supabase = createAdminClient(); 
+  const [ { count: usersCount }, { count: jobsCount }, { count: appsCount }, { count: companiesCount } ] = await Promise.all([
+    supabase.from('profiles').select('*', { count: 'exact', head: true }),
+    supabase.from('jobs').select('*', { count: 'exact', head: true }),
+    supabase.from('applications').select('*', { count: 'exact', head: true }),
+    supabase.from('companies').select('*', { count: 'exact', head: true })
+  ]);
+  return { users: usersCount || 0, jobs: jobsCount || 0, applications: appsCount || 0, companies: companiesCount || 0 };
+}
+
+export async function getAllUsers() {
+  const supabase = createAdminClient();
+  const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+  return data || [];
+}
+
+// --- MAPPERS ---
+
 function mapJobFromDB(dbJob: any): Job {
   return {
     id: dbJob.id,
     employerId: dbJob.employer_id,
-    companyId: dbJob.company_id, // Added
+    companyId: dbJob.company_id,
     title: dbJob.title,
     description: dbJob.description,
     location: dbJob.location,
+    country: dbJob.country,
+    city: dbJob.city,
     salaryRange: dbJob.salary_range,
+    salaryMin: dbJob.salary_min,
+    salaryMax: dbJob.salary_max,
+    salaryPeriod: dbJob.salary_period,
+    benefits: dbJob.benefits,
     applicationMethod: dbJob.application_method,
     contactInfo: dbJob.contact_info,
     status: dbJob.status,
@@ -944,39 +737,3 @@ function mapApplicationFromDB(dbApp: any): Application {
     createdAt: dbApp.created_at
   };
 }
-
-// --- ADMIN ---
-
-export async function getAdminStats() {
-  const supabase = createAdminClient(); // Bypass RLS
-  
-  const [
-    { count: usersCount },
-    { count: jobsCount },
-    { count: appsCount },
-    { count: companiesCount }
-  ] = await Promise.all([
-    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    supabase.from('jobs').select('*', { count: 'exact', head: true }),
-    supabase.from('applications').select('*', { count: 'exact', head: true }),
-    supabase.from('companies').select('*', { count: 'exact', head: true })
-  ]);
-
-  return {
-    users: usersCount || 0,
-    jobs: jobsCount || 0,
-    applications: appsCount || 0,
-    companies: companiesCount || 0
-  };
-}
-
-export async function getAllUsers() {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false });
-  return data || [];
-}
-
-

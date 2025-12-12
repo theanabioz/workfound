@@ -2,71 +2,63 @@
 
 **Project:** Workfound
 **Type:** Hybrid Job Board + ATS
-**Current State:** Beta v1.1 (Admin & Teams added)
+**Current State:** Release Candidate (UI/UX Polished)
 **Last Update:** December 3, 2025
 
 ---
 
-## 🚀 Quick Start for New AI Instance
-
-If you are a new AI agent taking over this project, **READ THIS FIRST**.
+## 🚀 Quick Start
 
 1.  **Infrastructure:** Supabase (PostgreSQL + Auth + Realtime + Storage).
-2.  **Logic:** All server actions and DB calls are in `src/lib/supabase-service.ts`.
-3.  **Styling:** Tailwind v4 (configured in `globals.css`).
-4.  **Admin Client:** We use `createAdminClient` (`src/utils/supabase/admin.ts`) with `service_role` key for:
-    *   Sending Job Alerts (reading all alerts).
-    *   Processing Invites (adding members).
-    *   Admin Dashboard stats.
+2.  **API:** `src/lib/supabase-service.ts` contains ALL logic.
+3.  **Styling:** Tailwind v4. Shadcn-like clean UI.
+4.  **Critical UX:**
+    - **Filters:** Sidebar on Homepage updates URL params. `getJobs` filters by country, city, salary (min/max/period).
+    - **Job Creation:** Form supports new fields: `salaryPeriod` ('month'/'hour'), `benefits`, `country`.
+    - **Apply Flow:** Modal window (`ApplyModal`), not a separate page.
 
 ---
 
 ## 🏗 Key Architectures
 
-### 1. Companies & Teams
-- **Schema:** `companies` <-> `company_members` (User) -> `jobs`.
-- **RLS Complexity:** `company_members` policies use a `security definer` function `get_my_company_ids()` to avoid infinite recursion. **DO NOT CHANGE** RLS policies for `company_members` without understanding this recursion loop.
-- **Invites:** Flow: Invite -> Email (Resend) -> Click Link -> `acceptInvitation` (Server Action) -> Add to Team.
+### 1. Data Model (Jobs)
+- `jobs` table has extended fields:
+    - `country` (text), `city` (text).
+    - `salary_min` (int), `salary_max` (int), `salary_period` ('month'|'hour').
+    - `benefits` (text[]).
+- **Migration:** Ensure `migration_salary_period.sql`, `migration_salary_max.sql`, `migration_filters.sql` are run.
 
-### 2. Admin Panel (`/admin`)
-- **Security:** Protected by Middleware.
-    - If user is NOT admin -> returns **404** (Rewrite), masking existence.
-    - Server Layout (`src/app/admin/layout.tsx`) also performs a hard check (`notFound()`).
-- **Access:** Only users with `role: 'admin'` in `profiles`.
+### 2. ATS & Companies
+- **Companies:** Jobs belong to Companies. Users belong to Companies (`company_members`).
+- **Kanban:** Vertical Drag & Drop (`KanbanBoard.tsx`).
+- **Screening:** Auto-reject logic in `submitApplication`.
 
-### 3. Realtime Chat
-- Uses Supabase Realtime.
-- Listens to `messages` (INSERT) and `conversations` (INSERT/UPDATE).
-- Component: `src/components/ChatSystem.tsx`.
-
-### 4. Kanban (ATS)
-- **Layout:** **Vertical Accordion** with Drag & Drop (`dnd-kit`).
-- **Design:** Compact "Square" cards.
-- Supports filtering by Job ID.
+### 3. Communication
+- **Chat:** Realtime.
+- **Alerts:** Transactional emails via Resend (`checkAndSendAlerts` in `createJob`).
 
 ---
 
 ## ✅ What is DONE
 
-- **Auth:** Login, Register, **Password Reset**, Role-based redirection.
-- **ATS:** Kanban, Screening (Auto-reject), Notes, Calendar.
-- **Storage:** Avatar uploads (Public bucket `avatars`).
-- **Communication:** Chat, Email Alerts (Resend).
-- **Admin:** Dashboard, User list.
+- **Full ATS:** Kanban, Screening, Notes, Calendar, Search.
+- **Full Job Board:** Advanced Filters, Favorites, Alerts.
+- **UI:** Redesigned Cards, Sticky Headers, Mobile Menu.
+- **Admin:** Basic Panel.
 
 ---
 
-## 🚧 Roadmap (Immediate Next Steps)
+## 🚧 Roadmap (Future)
 
-1.  **PDF Resumes:** The `resumes` bucket exists (Private). Need to add File Input to `ApplyPage` and link it to `Application`.
-2.  **Billing:** Stripe integration.
-3.  **Analytics:** Add charts to Admin & Employer dashboards.
+1.  **PDF Resumes:** Upload file in `ApplyModal`.
+2.  **Billing:** Stripe.
+3.  **Analytics:** Charts.
 
 ---
 
 ## 🤖 Recovery Prompt
 
 > "I am continuing development on 'Workfound'.
-> The project is in Beta v1.1. We have Companies, Teams, Admin Panel, and Realtime Chat.
-> Please review `DEVELOPER_HANDOFF.md` carefully (especially RLS and Admin Client sections).
+> The project is in Release Candidate state. UI is polished, Filters are working.
+> Please review `DEVELOPER_HANDOFF.md` carefully.
 > Let's proceed with [INSERT NEXT TASK, e.g., 'PDF Resume Upload']."

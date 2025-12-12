@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Workfound
 
-## Getting Started
+**Workfound** — это современная платформа для поиска работы и найма сотрудников, ориентированная на рынок Европы.
+Это гибрид классической доски объявлений (Job Board) и мощной системы управления кандидатами (ATS - Applicant Tracking System).
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🎯 Концепция "2 в 1"
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Мы решаем проблему разрыва между поиском и наймом.
+*   **Для малого бизнеса:** Режим "Прямой контакт" (Direct Mode). Никаких сложных форм — кандидат просто звонит вам.
+*   **Для профессиональных HR:** Режим "ATS" (Full Cycle). Воронка найма, скрининг, канбан-доска и аналитика.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ✨ Ключевые возможности
 
-## Learn More
+### 🏢 Для Работодателя (Employer)
 
-To learn more about Next.js, take a look at the following resources:
+1.  **Умное создание вакансий:**
+    *   Выбор режима: "Позвонить мне" или "Откликнуться на сайте".
+    *   **Скрининг-вопросы:** Автоматический отказ кандидатам, не прошедшим обязательные требования (виза, права).
+2.  **Полноценная ATS:**
+    *   **Канбан-доска:** Управление потоком кандидатов (Drag & Drop). Статусы: Новые -> Интервью -> Оффер.
+    *   **Внутренние заметки:** Комментарии к профилю кандидата, видимые только команде.
+3.  **Активный поиск:**
+    *   База резюме с фильтрами.
+    *   Сохранение кандидатов в "Избранное".
+4.  **Организация:**
+    *   **Календарь:** Планирование интервью и звонков.
+    *   **Команда:** Приглашение коллег (рекрутеров) для совместной работы.
+5.  **Брендинг:**
+    *   Публичная страница компании с логотипом и описанием.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 👨‍💼 Для Соискателя (Seeker)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1.  **Поиск работы:**
+    *   Фильтры по стране, городу, зарплате.
+    *   "Умные" карточки вакансий (сразу видно зарплату и условия).
+2.  **Мульти-резюме:**
+    *   Создание разных профилей под разные роли (Водитель, Строитель).
+3.  **Уведомления (Job Alerts):**
+    *   Подписка на новые вакансии (Email уведомления).
+4.  **Трекинг:**
+    *   История всех откликов и их текущий статус (Просмотрено, Отказ, Приглашение).
+5.  **Коммуникация:**
+    *   Встроенный **Real-time Чат** с работодателем.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛠 Технический Стек
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Проект построен на передовых технологиях (Modern Web Stack 2025):
+
+*   **Frontend:** Next.js 15 (App Router), React 19.
+*   **Styling:** Tailwind CSS v4, Lucide Icons.
+*   **Backend & DB:** Supabase (PostgreSQL).
+*   **Realtime:** Supabase Realtime (для Чата и обновлений Канбана).
+*   **Auth:** Supabase Auth (Email/Password, Middleware Protection).
+*   **Email:** Resend API.
+*   **UI Components:**
+    *   `dnd-kit` (Drag & Drop).
+    *   `react-day-picker` (Calendar logic).
+    *   Custom components inspired by shadcn/ui.
+
+---
+
+## 🚀 Как запустить проект
+
+1.  **Клонировать репозиторий:**
+    ```bash
+    git clone https://github.com/theanabioz/workfound.git
+    ```
+2.  **Установить зависимости:**
+    ```bash
+    npm install
+    ```
+3.  **Настроить `.env.local`:**
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=...
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+    SUPABASE_SERVICE_ROLE_KEY=...
+    RESEND_API_KEY=...
+    RESEND_FROM_EMAIL=noreply@yourdomain.com
+    ```
+4.  **Запустить:**
+    ```bash
+    npm run dev
+    ```
+
+---
+
+*Workfound — найм без лишних слов.*

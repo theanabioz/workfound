@@ -33,7 +33,14 @@ export interface Job {
   title: string;
   description: string; // Будет поддерживать HTML/Markdown позже
   location: string;
-  salaryRange: string; // Например: "1000 - 2000 EUR"
+  country?: string;
+  city?: string;
+  salaryRange: string; // Отображаемая строка (legacy or computed)
+  salaryMin?: number;  // От
+  salaryMax?: number;  // До
+  salaryPeriod?: 'hour' | 'month' | 'year'; // Период оплаты
+  benefits?: string[]; // Массив
+  company?: Company; // Данные компании (если есть)
   
   // Ключевой блок для выбора способа найма
   applicationMethod: ApplicationMethod;
