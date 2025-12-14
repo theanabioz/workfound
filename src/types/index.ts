@@ -40,7 +40,9 @@ export interface Job {
   salaryMax?: number;  // До
   salaryPeriod?: 'hour' | 'month' | 'year'; // Период оплаты
   benefits?: string[]; // Массив
-  company?: Company; // Данные компании (если есть)
+  company?: Company; 
+  isHighlighted?: boolean;
+  promotedUntil?: string;
   
   // Ключевой блок для выбора способа найма
   applicationMethod: ApplicationMethod;

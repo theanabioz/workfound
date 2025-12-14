@@ -18,7 +18,7 @@ import {
   Menu,
   X,
   MessageSquare,
-  History,
+  Wallet,
   Bell
 } from 'lucide-react';
 
@@ -29,7 +29,7 @@ interface SidebarItem {
 }
 
 interface SidebarSection {
-  title?: string; // Optional section title
+  title?: string;
   items: SidebarItem[];
 }
 
@@ -42,7 +42,6 @@ export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  // --- Navigation Structure ---
   const employerSections: SidebarSection[] = [
     {
       title: 'Главное',
@@ -54,10 +53,10 @@ export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
     {
       title: 'Найм',
       items: [
-        { label: 'Вакансии', href: '/employer/jobs', icon: Briefcase },
-        { label: 'Кандидаты', href: '/employer/search', icon: Search },
+        { label: 'Мои Вакансии', href: '/employer/jobs', icon: Briefcase },
+        { label: 'Поиск резюме', href: '/employer/search', icon: Search },
         { label: 'Воронка (ATS)', href: '/employer/applications', icon: Users },
-        { label: 'Избранное', href: '/employer/saved', icon: Bookmark },
+        { label: 'Избранные', href: '/employer/saved', icon: Bookmark },
       ]
     },
     {
@@ -69,7 +68,8 @@ export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
     {
       title: 'Система',
       items: [
-        { label: 'Команда', href: '/employer/team', icon: Users }, // New Link
+        { label: 'Биллинг', href: '/employer/billing', icon: Wallet },
+        { label: 'Команда', href: '/employer/team', icon: Users },
         { label: 'Настройки', href: '/employer/settings', icon: Settings },
       ]
     }
@@ -87,7 +87,7 @@ export function DashboardSidebar({ role, userName }: DashboardSidebarProps) {
       title: 'Поиск',
       items: [
         { label: 'Найти работу', href: '/', icon: Search },
-        { label: 'Подписки', href: '/seeker/alerts', icon: Bell }, // New
+        { label: 'Подписки', href: '/seeker/alerts', icon: Bell },
         { label: 'Избранное', href: '/seeker/saved', icon: Bookmark },
         { label: 'Сообщения', href: '/seeker/messages', icon: MessageSquare },
       ]

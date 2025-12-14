@@ -20,12 +20,27 @@ export function JobCard({ job, isSaved }: { job: Job; isSaved?: boolean }) {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
   const timeAgo = diffDays === 1 ? 'Сегодня' : diffDays === 2 ? 'Вчера' : `${diffDays} д. назад`;
 
+  const isPromoted = job.promotedUntil && new Date(job.promotedUntil) > new Date();
+
   return (
     <Link 
       href={`/jobs/${job.id}`}
-      className="group relative flex gap-4 p-5 bg-white border border-gray-200 rounded-xl transition-all duration-200 hover:border-black/30 hover:shadow-md"
+      className={`group relative flex flex-col sm:flex-row gap-5 p-5 sm:p-6 rounded-2xl transition-all duration-300 hover:border-black/20 hover:shadow-xl hover:-translate-y-0.5 ${
+        isPromoted
+          ? 'bg-purple-50/50 border-2 border-purple-400 shadow-md'
+          : job.isHighlighted 
+            ? 'bg-yellow-50/50 border-2 border-yellow-400 shadow-sm' 
+            : 'bg-white border border-gray-200'
+      }`}
     >
-      {/* Save Button (Absolute) */}
+      {/* Promoted Badge */}
+      {isPromoted && (
+        <div className="absolute -top-3 left-4 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+          TOP
+        </div>
+      )}
+
+      {/* Save Button (Absolute Top Right) */}
       <div className="absolute top-4 right-4 z-10">
         <SaveButton itemId={job.id} itemType="job" initialSaved={isSaved} />
       </div>
@@ -59,10 +74,6 @@ export function JobCard({ job, isSaved }: { job: Job; isSaved?: boolean }) {
                 {job.salaryPeriod === 'hour' ? '/ч' : job.salaryPeriod === 'year' ? '/год' : '/мес'}
               </span>
             </span>
-            <div className="hidden sm:flex items-center justify-end gap-1 text-xs text-gray-400 mt-1">
-              <MapPin className="w-3 h-3" />
-              {job.location}
-            </div>
           </div>
         </div>
 
@@ -70,11 +81,14 @@ export function JobCard({ job, isSaved }: { job: Job; isSaved?: boolean }) {
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           
           {/* Tags */}
-          <div className="flex flex-wrap gap-2">
-            {/* Mobile Location (Visible only on mobile) */}
-            <span className="sm:hidden inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
-              <MapPin className="w-3 h-3" /> {job.location}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Location (New Position) */}
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700">
+              <MapPin className="w-4 h-4 text-gray-400" />
+              {job.location}
             </span>
+
+            <div className="h-1 w-1 rounded-full bg-gray-300 hidden sm:block"></div>
 
             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${isDirectHiring ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
               {isDirectHiring ? <Phone className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}

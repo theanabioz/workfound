@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getCurrentUser, getEmployerJobs } from '@/lib/supabase-service';
-import { Plus, Search, Briefcase, MapPin, Calendar } from 'lucide-react';
+import { Plus, Search, Briefcase, MapPin, Calendar, Rocket } from 'lucide-react';
 
 export default async function MyJobsPage() {
   const currentUser = await getCurrentUser();
@@ -65,7 +65,7 @@ export default async function MyJobsPage() {
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
                 <tr>
                   <th className="px-6 py-4 font-medium">Должность</th>
-                  <th className="px-6 py-4 font-medium">Кандидаты</th>
+                  <th className="px-6 py-4 font-medium">Действия</th>
                   <th className="px-6 py-4 font-medium">Дата</th>
                   <th className="px-6 py-4 font-medium text-right">Статус</th>
                 </tr>
@@ -87,9 +87,14 @@ export default async function MyJobsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Link href={`/employer/applications?jobId=${job.id}`} className="text-sm text-gray-600 hover:text-black inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 transition-colors">
-                        Смотреть отклики
-                      </Link>
+                      <div className="flex gap-2">
+                        <Link href={`/employer/applications?jobId=${job.id}`} className="text-sm text-gray-600 hover:text-black inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 transition-colors">
+                          Отклики
+                        </Link>
+                        <Link href={`/employer/billing?tab=services&jobId=${job.id}`} className="text-sm text-purple-600 hover:text-purple-800 inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-purple-50 transition-colors font-medium">
+                          <Rocket className="w-3 h-3" /> Продвинуть
+                        </Link>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 text-sm text-gray-500">

@@ -1,8 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
 export function createAdminClient() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) console.error('SUPABASE_SERVICE_ROLE_KEY is missing!');
+  else console.log('Admin Key loaded:', key.substring(0, 5) + '...');
+
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    key!
   )
 }

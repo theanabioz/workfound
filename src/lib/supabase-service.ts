@@ -181,6 +181,9 @@ export async function getJobs(filters: JobFilters | string = {}): Promise<Job[]>
     .from('jobs')
     .select('*')
     .eq('status', 'published')
+    // Сначала продвинутые (у кого дата в будущем), потом обычные
+    // NULLS LAST важен, чтобы непродвинутые были внизу
+    .order('promoted_until', { ascending: false, nullsFirst: false }) 
     .order('created_at', { ascending: false });
 
   if (actualFilters.query) {
@@ -328,6 +331,26 @@ export async function createJob(jobData: Omit<Job, 'id' | 'createdAt' | 'updated
   await checkAndSendAlerts(finalJob);
 
   return finalJob;
+}
+
+export async function promoteJob(jobId: string, planId: string): Promise<void> {
+  const supabase = await createClient(); // Need admin client to update jobs? No, employer can update own jobs
+  
+  const updates: any = {};
+  if (planId === 'highlight') {
+    updates.is_highlighted = true;
+  } else if (planId === 'top_7') {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    updates.promoted_until = nextWeek.toISOString();
+  }
+
+  const { error } = await supabase
+    .from('jobs')
+    .update(updates)
+    .eq('id', jobId);
+
+  if (error) throw error;
 }
 
 export async function getJobQuestions(jobId: string): Promise<JobQuestion[]> {
@@ -686,6 +709,123 @@ export async function getAllUsers() {
   return data || [];
 }
 
+// --- WALLET & TRANSACTIONS ---
+
+export interface Transaction {
+  id: string;
+  companyId: string;
+  amount: number;
+  type: 'deposit' | 'spend';
+  description: string;
+  createdAt: string;
+}
+
+export async function getCompanyBalance(): Promise<number> {
+  const company = await getCurrentCompany();
+  if (!company) return 0;
+  
+  // В реальном проекте лучше не доверять company.balance из кэша, а делать select
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('companies')
+    .select('balance')
+    .eq('id', company.id)
+    .single();
+    
+  return data?.balance || 0;
+}
+
+export async function getTransactions(): Promise<Transaction[]> {
+  const company = await getCurrentCompany();
+  if (!company) return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('company_id', company.id)
+    .order('created_at', { ascending: false });
+
+  return (data || []).map((t: any) => ({
+    id: t.id,
+    companyId: t.company_id,
+    amount: t.amount,
+    type: t.type,
+    description: t.description,
+    createdAt: t.created_at
+  }));
+}
+
+// Server-side only (called after webhook/success)
+export async function processDeposit(companyId: string, amount: number, sessionId: string): Promise<void> {
+  console.log(`[DEPOSIT] Processing deposit: ${amount} cents for company ${companyId}`);
+  const supabase = createAdminClient(); 
+  
+  // 1. Check if already processed
+  const { data: existing } = await supabase
+    .from('transactions')
+    .select('id')
+    .eq('stripe_session_id', sessionId)
+    .single();
+    
+  if (existing) {
+    console.log('[DEPOSIT] Transaction already processed');
+    return;
+  }
+
+  // 2. Add Transaction
+  const { error: txError } = await supabase.from('transactions').insert({
+    company_id: companyId,
+    amount: amount,
+    type: 'deposit',
+    description: 'Пополнение баланса',
+    stripe_session_id: sessionId
+  });
+
+  if (txError) {
+    console.error('[DEPOSIT] Error inserting transaction:', JSON.stringify(txError, null, 2));
+    return;
+  }
+
+  // 3. Update Balance
+  const { data: company } = await supabase.from('companies').select('balance').eq('id', companyId).single();
+  const newBalance = (company?.balance || 0) + amount;
+  
+  const { error: balError } = await supabase.from('companies').update({ balance: newBalance }).eq('id', companyId);
+
+  if (balError) {
+    console.error('[DEPOSIT] Error updating balance:', balError);
+  } else {
+    console.log(`[DEPOSIT] Balance updated. New balance: ${newBalance}`);
+  }
+}
+
+export async function spendBalance(amount: number, description: string): Promise<boolean> {
+  const company = await getCurrentCompany();
+  if (!company) throw new Error('No company');
+  
+  const supabase = createAdminClient(); // Admin client to manage money securely
+
+  // 1. Get fresh balance
+  const { data: c } = await supabase.from('companies').select('balance').eq('id', company.id).single();
+  const currentBalance = c?.balance || 0;
+
+  if (currentBalance < amount) return false;
+
+  // 2. Deduct
+  await supabase.from('companies').update({ balance: currentBalance - amount }).eq('id', company.id);
+
+  // 3. Record transaction
+  await supabase.from('transactions').insert({
+    company_id: company.id,
+    amount: -amount,
+    type: 'spend',
+    description: description
+  });
+
+  return true;
+}
+
 // --- MAPPERS ---
 
 function mapJobFromDB(dbJob: any): Job {
@@ -703,6 +843,8 @@ function mapJobFromDB(dbJob: any): Job {
     salaryMax: dbJob.salary_max,
     salaryPeriod: dbJob.salary_period,
     benefits: dbJob.benefits,
+    isHighlighted: dbJob.is_highlighted,
+    promotedUntil: dbJob.promoted_until,
     applicationMethod: dbJob.application_method,
     contactInfo: dbJob.contact_info,
     status: dbJob.status,
