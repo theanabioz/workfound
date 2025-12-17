@@ -263,6 +263,23 @@ export async function getJobById(id: string): Promise<Job | undefined> {
   return job;
 }
 
+export async function getSimilarJobs(currentJobId: string, location: string): Promise<Job[]> {
+  const supabase = await createClient();
+  
+  // Ищем в той же стране/городе, исключая текущую
+  // Ограничиваем 3 штуками
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .neq('id', currentJobId)
+    .ilike('location', `%${location.split(',')[0]}%`) // Простой поиск по городу
+    .eq('status', 'published')
+    .limit(3);
+
+  if (error) return [];
+  return data.map(mapJobFromDB);
+}
+
 export async function getEmployerJobs(userId: string): Promise<Job[]> {
   const supabase = await createClient();
   const company = await getCurrentCompany();
@@ -845,6 +862,7 @@ function mapJobFromDB(dbJob: any): Job {
     benefits: dbJob.benefits,
     isHighlighted: dbJob.is_highlighted,
     promotedUntil: dbJob.promoted_until,
+    views: dbJob.views || 0,
     applicationMethod: dbJob.application_method,
     contactInfo: dbJob.contact_info,
     status: dbJob.status,

@@ -1,6 +1,7 @@
 import { getCompanyBySlug, getCompanyJobsPublic } from '@/lib/supabase-service';
 import { Navbar } from '@/components/Navbar';
 import { JobCard } from '@/components/JobCard';
+import { SiteFooter } from "@/components/SiteFooter";
 import { Building2, Globe, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
@@ -10,14 +11,15 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
 
   if (!company) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Navbar />
-        <div className="p-12 text-center">
+        <div className="p-12 text-center flex-1">
           <h1 className="text-2xl font-bold text-gray-900">Компания не найдена</h1>
           <Link href="/" className="text-blue-600 hover:underline mt-2 block">
             На главную
           </Link>
         </div>
+        <SiteFooter />
       </div>
     );
   }
@@ -25,7 +27,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
   const jobs = await getCompanyJobsPublic(company.id);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
       {/* Cover / Header */}
@@ -34,9 +36,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
             
             {/* Logo */}
-            <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl border border-gray-200 flex items-center justify-center text-4xl font-bold text-gray-400 shadow-sm">
+            <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl border border-gray-200 flex items-center justify-center text-4xl font-bold text-gray-400 shadow-sm overflow-hidden">
               {company.logoUrl ? (
-                <img src={company.logoUrl} alt={company.name} className="w-full h-full object-cover rounded-2xl" />
+                <img src={company.logoUrl} alt={company.name} className="w-full h-full object-cover" />
               ) : (
                 company.name.charAt(0).toUpperCase()
               )}
@@ -62,17 +64,12 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
                 {company.description || 'Описание компании пока не добавлено.'}
               </p>
             </div>
-
-            {/* Action */}
-            {/* <button className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors">
-              Подписаться
-            </button> */}
           </div>
         </div>
       </div>
 
       {/* Jobs Section */}
-      <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="max-w-5xl mx-auto px-4 py-12 flex-1 w-full">
         <h2 className="text-xl font-bold text-gray-900 mb-6">Открытые вакансии</h2>
         
         {jobs.length === 0 ? (
@@ -88,6 +85,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
         )}
       </div>
 
+      <SiteFooter />
     </div>
   );
 }

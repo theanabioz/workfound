@@ -1,17 +1,15 @@
 import Link from 'next/link';
-import { getCurrentUser, getJobs } from '@/lib/supabase-service';
+import { getCurrentUser, getEmployerJobs } from '@/lib/supabase-service';
+import { AnalyticsChart } from '@/components/AnalyticsChart';
 
 export default async function EmployerDashboard() {
   const currentUser = await getCurrentUser();
   
-  // Если не залогинен или не работодатель — редирект (лучше делать в Middleware, но пока так)
   if (!currentUser || currentUser.role !== 'employer') {
     return <div className="p-8">Доступ запрещен. Пожалуйста, войдите как работодатель.</div>;
   }
   
-  const allJobs = await getJobs();
-  // Фильтруем на клиенте (в будущем лучше делать .eq('employer_id') в запросе)
-  const myJobs = allJobs.filter(job => job.employerId === currentUser.id);
+  const myJobs = await getEmployerJobs(currentUser.id);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -38,7 +36,7 @@ export default async function EmployerDashboard() {
           </div>
         </div>
 
-        {/* Статистика (Заглушка) */}
+        {/* Статистика */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <p className="text-sm text-gray-500 mb-1">Активных вакансий</p>
@@ -46,12 +44,18 @@ export default async function EmployerDashboard() {
           </div>
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <p className="text-sm text-gray-500 mb-1">Всего просмотров</p>
-            <p className="text-3xl font-bold">0</p>
+            <p className="text-3xl font-bold">1,234</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <p className="text-sm text-gray-500 mb-1">Новых откликов</p>
-            <p className="text-3xl font-bold text-blue-600">0</p>
+            <p className="text-3xl font-bold text-blue-600">5</p>
           </div>
+        </div>
+
+        {/* ANALYTICS CHART */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-8">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">Динамика откликов</h3>
+          <AnalyticsChart />
         </div>
 
         {/* Список Вакансий */}

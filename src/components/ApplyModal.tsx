@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, CheckCircle, Plus, HelpCircle } from 'lucide-react';
+import { X, CheckCircle, Plus, HelpCircle, Upload, FileText, Loader2, User } from 'lucide-react';
 import Link from 'next/link';
 import { submitApplication, getMyResumes, getJobQuestions } from '@/lib/supabase-service';
 import { Resume, JobQuestion, QuestionAnswer } from '@/types';
+import { uploadResume } from '@/utils/upload';
+import { createClient } from '@/utils/supabase/client';
 
 interface ApplyModalProps {
   jobId: string;
@@ -20,16 +22,23 @@ export function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps) {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [questions, setQuestions] = useState<JobQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   // Form State
   const [coverLetter, setCoverLetter] = useState('');
+  const [applyMethod, setApplyMethod] = useState<'profile' | 'file'>('profile');
   const [selectedResumeId, setSelectedResumeId] = useState<string>('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
   // Load Data
   useEffect(() => {
     const load = async () => {
       try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) setCurrentUserId(user.id);
+
         const [resumesData, questionsData] = await Promise.all([
           getMyResumes(),
           getJobQuestions(jobId)
@@ -40,6 +49,8 @@ export function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps) {
         
         if (resumesData.length > 0) {
           setSelectedResumeId(resumesData[0].id);
+        } else {
+          setApplyMethod('file'); // Если профилей нет, переключаем на файл по умолчанию
         }
         
         const initialAnswers: Record<string, string> = {};
@@ -61,9 +72,17 @@ export function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps) {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setUploadedFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedResumeId) return alert('Выберите резюме');
+    
+    if (applyMethod === 'profile' && !selectedResumeId) return alert('Выберите резюме из списка');
+    if (applyMethod === 'file' && !uploadedFile) return alert('Загрузите файл резюме');
 
     setIsSubmitting(true);
 
@@ -73,17 +92,31 @@ export function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps) {
         answerText: val
       }));
 
+      let resumeUrl = '';
+      let resumeIdToSave = undefined;
+
+      if (applyMethod === 'file' && uploadedFile && currentUserId) {
+        // Upload File
+        const path = await uploadResume(uploadedFile, currentUserId);
+        // Получаем публичную ссылку (или храним путь).
+        // В нашем случае, бакет resumes приватный. Мы храним путь.
+        resumeUrl = path; 
+      } else {
+        resumeIdToSave = selectedResumeId;
+      }
+
       await submitApplication({
         jobId,
         seekerId: '', 
-        resumeId: selectedResumeId,
+        resumeId: resumeIdToSave,
+        resumeUrl: resumeUrl, // Save path if file uploaded
         coverLetter,
         answers: formattedAnswers
       });
       setIsSuccess(true);
     } catch (error) {
       console.error('Ошибка отправки:', error);
-      alert('Ошибка при отправке. Вы вошли в аккаунт?');
+      alert('Ошибка при отправке.');
     } finally {
       setIsSubmitting(false);
     }
@@ -173,44 +206,88 @@ export function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps) {
                 </div>
               )}
 
-              {/* RESUME */}
+              {/* RESUME SELECTION TYPE */}
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-3">Выберите резюме</label>
+                <label className="block text-sm font-bold text-gray-900 mb-3">Резюме</label>
                 
-                {resumes.length === 0 ? (
-                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-center">
-                    <p className="text-yellow-800 text-sm mb-2">У вас пока нет резюме.</p>
-                    <Link href="/seeker/resumes/new" className="text-black font-bold underline text-sm">
-                      Создать сейчас
-                    </Link>
-                  </div>
+                <div className="flex bg-gray-100 p-1 rounded-xl mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setApplyMethod('profile')}
+                    className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${
+                      applyMethod === 'profile' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'
+                    }`}
+                  >
+                    <User className="w-4 h-4" /> Профиль
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setApplyMethod('file')}
+                    className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${
+                      applyMethod === 'file' ? 'bg-white shadow-sm text-black' : 'text-gray-500 hover:text-black'
+                    }`}
+                  >
+                    <Upload className="w-4 h-4" /> Загрузить файл
+                  </button>
+                </div>
+
+                {applyMethod === 'profile' ? (
+                  resumes.length === 0 ? (
+                    <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl text-center">
+                      <p className="text-yellow-800 text-sm mb-2">У вас пока нет профилей.</p>
+                      <Link href="/seeker/resumes/new" className="text-black font-bold underline text-sm">
+                        Создать сейчас
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {resumes.map((resume) => (
+                        <div 
+                          key={resume.id}
+                          onClick={() => setSelectedResumeId(resume.id)}
+                          className={`cursor-pointer border rounded-xl p-4 flex items-center gap-3 transition-all ${
+                            selectedResumeId === resume.id 
+                              ? 'border-black bg-gray-50 ring-1 ring-black' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                            selectedResumeId === resume.id ? 'border-black' : 'border-gray-300'
+                          }`}>
+                            {selectedResumeId === resume.id && <div className="w-2.5 h-2.5 bg-black rounded-full" />}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-gray-900 text-sm">{resume.title}</h3>
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{resume.about}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
                 ) : (
-                  <div className="space-y-3">
-                    {resumes.map((resume) => (
-                      <div 
-                        key={resume.id}
-                        onClick={() => setSelectedResumeId(resume.id)}
-                        className={`cursor-pointer border rounded-xl p-4 flex items-center gap-3 transition-all ${
-                          selectedResumeId === resume.id 
-                            ? 'border-black bg-gray-50 ring-1 ring-black' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                          selectedResumeId === resume.id ? 'border-black' : 'border-gray-300'
-                        }`}>
-                          {selectedResumeId === resume.id && <div className="w-2.5 h-2.5 bg-black rounded-full" />}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 text-sm">{resume.title}</h3>
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{resume.about}</p>
-                        </div>
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors relative">
+                    <input 
+                      type="file" 
+                      accept=".pdf,.doc,.docx"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={handleFileChange}
+                    />
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                        {uploadedFile ? <FileText className="w-6 h-6 text-black" /> : <Upload className="w-6 h-6 text-gray-400" />}
                       </div>
-                    ))}
-                    
-                    <Link href="/seeker/resumes/new" className="inline-flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-black mt-2">
-                      <Plus className="w-3 h-3" /> Создать новое резюме
-                    </Link>
+                      {uploadedFile ? (
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{uploadedFile.name}</p>
+                          <p className="text-xs text-green-600">Готов к отправке</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Нажмите, чтобы выбрать файл</p>
+                          <p className="text-xs text-gray-400 mt-1">PDF, DOCX до 5MB</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -236,9 +313,10 @@ export function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps) {
           <button
             form="apply-form"
             type="submit"
-            disabled={isSubmitting || resumes.length === 0}
-            className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 shadow-lg shadow-gray-200"
+            disabled={isSubmitting || (applyMethod === 'profile' && resumes.length === 0) || (applyMethod === 'file' && !uploadedFile)}
+            className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 shadow-lg shadow-gray-200 flex items-center justify-center gap-2"
           >
+            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             {isSubmitting ? 'Отправка...' : 'Отправить отклик'}
           </button>
         </div>

@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createJob } from '@/lib/supabase-service';
-import { Phone, FileText, CheckCircle2, MessageCircle, Plus, Trash2, HelpCircle } from 'lucide-react';
+import { Phone, FileText, CheckCircle2, MessageCircle, Plus, Trash2, HelpCircle, Wand2, Loader2 } from 'lucide-react';
 import { ApplicationMethod, JobQuestion } from '@/types';
 
 export default function CreateJobPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -18,6 +19,7 @@ export default function CreateJobPage() {
   const [city, setCity] = useState('');
   
   // Salary
+  const [salaryRange, setSalaryRange] = useState('');
   const [salaryMin, setSalaryMin] = useState('');
   const [salaryMax, setSalaryMax] = useState('');
   const [salaryPeriod, setSalaryPeriod] = useState<'month' | 'hour' | 'year'>('month');
@@ -59,22 +61,47 @@ export default function CreateJobPage() {
     setQuestions(newQuestions);
   };
 
+  const handleAiGenerate = async () => {
+    if (!title) return alert('Введите название должности, чтобы AI мог написать описание.');
+    
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/ai/generate-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      const data = await res.json();
+      if (data.text) {
+        setDescription(data.text);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Ошибка генерации');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Auto-generate display string locally for UX or let server do it
-      // We'll let server do it based on Min/Max
-      
+      // Auto-generate salary range string if not provided
+      let displaySalary = salaryRange;
+      if (!displaySalary && salaryMin) {
+        displaySalary = `${salaryMin}`;
+        if (salaryMax) displaySalary += ` - ${salaryMax}`;
+      }
+
       await createJob({
         title,
         description,
         location: `${city}, ${country}`,
         country,
         city,
-        // salaryRange we can omit or pass empty string, server will generate
-        salaryRange: '',
+        salaryRange: displaySalary, // Use auto or manual
         salaryMin: salaryMin ? parseInt(salaryMin) : undefined,
         salaryMax: salaryMax ? parseInt(salaryMax) : undefined,
         salaryPeriod,
@@ -204,7 +231,18 @@ export default function CreateJobPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Описание вакансии</label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-gray-700">Описание вакансии</label>
+                <button
+                  type="button"
+                  onClick={handleAiGenerate}
+                  disabled={isGenerating || !title}
+                  className="text-xs font-bold text-purple-600 flex items-center gap-1 hover:text-purple-800 transition-colors disabled:opacity-50"
+                >
+                  {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                  {isGenerating ? 'Пишу...' : 'AI Помощник'}
+                </button>
+              </div>
               <textarea 
                 required
                 rows={5}

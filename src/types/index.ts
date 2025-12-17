@@ -43,6 +43,7 @@ export interface Job {
   company?: Company; 
   isHighlighted?: boolean;
   promotedUntil?: string;
+  views?: number;
   
   // Ключевой блок для выбора способа найма
   applicationMethod: ApplicationMethod;
