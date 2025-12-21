@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
-import { Job, Application, Resume, UserProfile, JobQuestion, QuestionAnswer, Company, CompanyMember, CalendarEvent } from '@/types';
+import { Job, Application, Resume, UserProfile, JobQuestion, QuestionAnswer, Company, CompanyMember, CalendarEvent, Conversation, Message, Note } from '@/types';
 import { redirect } from 'next/navigation';
 import { Resend } from 'resend';
 
@@ -168,7 +168,7 @@ export interface JobFilters {
   country?: string;
   city?: string;
   minSalary?: number;
-  salaryPeriod?: 'hour' | 'month';
+  salaryPeriod?: 'hour' | 'month' | 'year';
   benefits?: string[];
 }
 
@@ -294,7 +294,7 @@ export async function getEmployerJobs(userId: string): Promise<Job[]> {
   return data.map(mapJobFromDB);
 }
 
-export async function createJob(jobData: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>): Promise<Job> {
+export async function createJob(jobData: Omit<Job, 'id' | 'createdAt' | 'updatedAt' | 'employerId' | 'companyId'>): Promise<Job> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
@@ -417,7 +417,7 @@ export async function getMyResumes(): Promise<Resume[]> {
   return getResumes(user.id);
 }
 
-export async function createResume(resumeData: Omit<Resume, 'id' | 'createdAt' | 'updatedAt'>): Promise<Resume> {
+export async function createResume(resumeData: Omit<Resume, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<Resume> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
@@ -426,13 +426,16 @@ export async function createResume(resumeData: Omit<Resume, 'id' | 'createdAt' |
   return mapResumeFromDB(data);
 }
 
-export async function searchResumes(query: string): Promise<Resume[]> {
+export async function searchResumes(query: string): Promise<(Resume & { fullName?: string })[]> {
   const supabase = await createClient();
-  let q = supabase.from('resumes').select('*').eq('is_public', true).order('created_at', { ascending: false });
+  let q = supabase.from('resumes').select('*, profiles(full_name)').eq('is_public', true).order('created_at', { ascending: false });
   if (query) q = q.or(`title.ilike.%${query}%,skills.ilike.%${query}%`);
   const { data, error } = await q;
   if (error) return [];
-  return data.map(mapResumeFromDB);
+  return data.map((r: any) => ({
+    ...mapResumeFromDB(r),
+    fullName: r.profiles?.full_name
+  }));
 }
 
 // --- APPLICATIONS ---
@@ -459,13 +462,27 @@ export async function submitApplication(appData: Omit<Application, 'id' | 'statu
   return mapApplicationFromDB(savedApp);
 }
 
-export async function getEmployerApplications(employerId: string): Promise<(Application & { jobTitle: string; resume?: Resume })[]> {
+export async function getEmployerApplications(employerId: string): Promise<(Application & { jobTitle: string; resume?: Resume & { fullName?: string } })[]> {
   const supabase = await createClient();
   const { data: member } = await supabase.from('company_members').select('company_id').eq('user_id', employerId).single();
   if (!member) return [];
-  const { data, error } = await supabase.from('applications').select(`*, jobs ( title, employer_id, company_id ), resumes ( * )`).eq('jobs.company_id', member.company_id);
+  const { data, error } = await supabase.from('applications').select(`*, jobs ( title, employer_id, company_id ), resumes ( *, profiles ( full_name ) )`).eq('jobs.company_id', member.company_id);
   if (error) return [];
-  return data.map((item: any) => ({ id: item.id, jobId: item.job_id, seekerId: item.seeker_id, status: item.status, resumeId: item.resume_id, resumeUrl: item.resume_url, coverLetter: item.cover_letter, createdAt: item.created_at, jobTitle: item.jobs?.title || 'Unknown', resume: item.resumes ? mapResumeFromDB(item.resumes) : undefined }));
+  return data.map((item: any) => ({
+    id: item.id,
+    jobId: item.job_id,
+    seekerId: item.seeker_id,
+    status: item.status,
+    resumeId: item.resume_id,
+    resumeUrl: item.resume_url,
+    coverLetter: item.cover_letter,
+    createdAt: item.created_at,
+    jobTitle: item.jobs?.title || 'Unknown',
+    resume: item.resumes ? {
+      ...mapResumeFromDB(item.resumes),
+      fullName: item.resumes.profiles?.full_name
+    } : undefined
+  }));
 }
 
 export async function getSeekerApplications(seekerId: string): Promise<(Application & { job: Job })[]> {
@@ -616,15 +633,18 @@ export async function getSavedResumeIds(): Promise<string[]> {
   return (data || []).map(i => i.item_id);
 }
 
-export async function getSavedResumes(): Promise<Resume[]> {
+export async function getSavedResumes(): Promise<(Resume & { fullName?: string })[]> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
   const { data: savedItems } = await supabase.from('saved_items').select('item_id').eq('user_id', user.id).eq('item_type', 'resume');
   if (!savedItems || savedItems.length === 0) return [];
   const resumeIds = savedItems.map(i => i.item_id);
-  const { data: resumes } = await supabase.from('resumes').select('*').in('id', resumeIds);
-  return (resumes || []).map(mapResumeFromDB);
+  const { data: resumes } = await supabase.from('resumes').select('*, profiles(full_name)').in('id', resumeIds);
+  return (resumes || []).map((r: any) => ({
+    ...mapResumeFromDB(r),
+    fullName: r.profiles?.full_name
+  }));
 }
 
 // --- TEAM & INVITATIONS ---

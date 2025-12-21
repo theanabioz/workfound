@@ -5,7 +5,7 @@ import { Application, Resume } from '@/types';
 import { updateApplicationStatus } from '@/lib/supabase-service';
 import { ChevronDown, ChevronRight, User, ExternalLink, Check, X, MessageSquare, Calendar } from 'lucide-react';
 
-type AppWithDetails = Application & { jobTitle: string; resume?: Resume };
+type AppWithDetails = Application & { jobTitle: string; resume?: Resume & { fullName?: string } };
 
 export function EmployerKanban({ initialApplications }: { initialApplications: AppWithDetails[] }) {
   const [applications, setApplications] = useState(initialApplications);
@@ -180,13 +180,13 @@ function KanbanSection({ title, count, children, color, defaultOpen }: any) {
   );
 }
 
-function KanbanCard({ app, actions, onAction, loading }: any) {
+function KanbanCard({ app, actions, onAction, loading }: { app: AppWithDetails, actions: any[], onAction: (s: string) => void, loading: boolean }) {
   return (
     <div className={`bg-white p-5 rounded-lg border border-gray-200 shadow-sm transition-all ${loading ? 'opacity-50 pointer-events-none' : 'hover:border-blue-300'}`}>
       <div className="flex justify-between items-start mb-4">
         <div>
           <h4 className="text-lg font-bold text-gray-900 mb-1">
-            {app.resume ? app.resume.full_name || 'Кандидат' : 'Кандидат'}
+            {app.resume ? app.resume.fullName || 'Кандидат' : 'Кандидат'}
           </h4>
           <p className="text-sm text-gray-500">Вакансия: <span className="font-medium text-gray-700">{app.jobTitle}</span></p>
         </div>

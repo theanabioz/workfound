@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getCompanyBalance, getTransactions, Transaction, Job, promoteJob, spendBalance } from '@/lib/supabase-service';
+import { useState, useEffect, Suspense } from 'react';
+import { getCompanyBalance, getTransactions, Transaction, promoteJob, spendBalance } from '@/lib/supabase-service';
+import { Job } from '@/types';
 import { Wallet, Plus, CreditCard, Zap, Star, LayoutList, CheckCircle, Calendar } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getMyCompanyJobsAction } from './actions';
 
-export default function BillingPage() {
+function BillingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -368,5 +369,13 @@ export default function BillingPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BillingContent />
+    </Suspense>
   );
 }

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Application, Resume } from '@/types';
-import { Note, getNotes, addNote, deleteNote, startConversation } from '@/lib/supabase-service';
+import { Application, Resume, Note } from '@/types';
+import { getNotes, addNote, deleteNote, startConversation } from '@/lib/supabase-service';
 import { X, User, Briefcase, MessageSquare, Trash2, Send, Mail } from 'lucide-react';
 
-type AppWithDetails = Application & { jobTitle: string; resume?: Resume };
+type AppWithDetails = Application & { jobTitle: string; resume?: Resume & { fullName?: string } };
 
 interface ModalProps {
   app: AppWithDetails;

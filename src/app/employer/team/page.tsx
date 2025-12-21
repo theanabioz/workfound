@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getCompanyMembers, getInvitations, inviteMember, CompanyMember, Invitation } from '@/lib/supabase-service';
+import { getCompanyMembers, getInvitations, inviteMember, Invitation } from '@/lib/supabase-service';
+import { CompanyMember } from '@/types';
 import { UserPlus, Mail, Clock, User, Check } from 'lucide-react';
 
 export default function TeamPage() {

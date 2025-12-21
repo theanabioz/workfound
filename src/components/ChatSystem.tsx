@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Conversation, Message, getConversations, getMessages, sendMessage } from '@/lib/supabase-service';
+import { getConversations, getMessages, sendMessage } from '@/lib/supabase-service';
+import { Conversation, Message } from '@/types';
 import { Send, Briefcase } from 'lucide-react';
 
 export function ChatSystem({ currentUserId }: { currentUserId: string }) {

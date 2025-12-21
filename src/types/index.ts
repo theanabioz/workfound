@@ -118,3 +118,48 @@ export interface Resume {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CalendarEvent {
+  id: string;
+  employerId: string;
+  applicationId?: string;
+  title: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  eventType: 'interview' | 'call' | 'other';
+  candidateName?: string;
+}
+
+export interface Conversation {
+  id: string;
+  employerId: string;
+  seekerId: string;
+  jobId?: string;
+  updatedAt: string;
+  otherUser?: {
+    fullName: string;
+    role?: string;
+  };
+  lastMessage?: string;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface Note {
+  id: string;
+  applicationId: string;
+  authorId: string;
+  content: string;
+  createdAt: string;
+  author?: {
+    fullName: string;
+  };
+}

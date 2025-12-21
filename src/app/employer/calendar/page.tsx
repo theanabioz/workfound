@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CalendarEvent, getEvents } from '@/lib/supabase-service';
+import { getEvents } from '@/lib/supabase-service';
+import { CalendarEvent } from '@/types';
 import { 
   startOfMonth, 
   endOfMonth, 

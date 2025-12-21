@@ -19,7 +19,7 @@ import { updateApplicationStatus } from '@/lib/supabase-service';
 import { ExternalLink, MoreHorizontal, ChevronDown, ChevronRight, GripVertical, Filter, Briefcase } from 'lucide-react';
 import { ApplicationModal } from './ApplicationModal';
 
-type AppWithDetails = Application & { jobTitle: string; resume?: Resume };
+type AppWithDetails = Application & { jobTitle: string; resume?: Resume & { fullName?: string } };
 
 const SECTIONS = [
   { id: 'new', title: 'Новые отклики', color: 'bg-blue-50 border-blue-200 text-blue-800' },
