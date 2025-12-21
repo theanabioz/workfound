@@ -5,13 +5,23 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Helper to get Resend instance safely
+const getResend = () => {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY is missing.');
+    return undefined;
+  }
+  return new Resend(process.env.RESEND_API_KEY);
+};
 
 export async function sendTestEmail() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user || !user.email) throw new Error('No user email');
+
+  const resend = getResend();
+  if (!resend) throw new Error('Email service not configured (missing API key)');
 
   const { data, error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev', 
