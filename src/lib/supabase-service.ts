@@ -6,7 +6,14 @@ import { Job, Application, Resume, UserProfile, JobQuestion, QuestionAnswer, Com
 import { redirect } from 'next/navigation';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Helper to get Resend instance safely (returns undefined if no key)
+const getResend = () => {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY is missing. Email sending will be disabled.');
+    return undefined;
+  }
+  return new Resend(process.env.RESEND_API_KEY);
+};
 
 const COUNTRY_MAP: Record<string, string> = {
   'de': 'Германия',
@@ -45,6 +52,9 @@ async function checkAndSendAlerts(job: Job) {
   for (const alert of matchingAlerts) {
     const email = alert.profiles?.email;
     if (!email) continue;
+
+    const resend = getResend();
+    if (!resend) continue;
 
     try {
       await resend.emails.send({
@@ -674,9 +684,13 @@ export async function inviteMember(email: string, role: 'admin' | 'recruiter'): 
   const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   const { error } = await supabase.from('company_invitations').insert({ company_id: company.id, email, role, token });
   if (error) throw error;
-  try {
-    await resend.emails.send({ from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev', to: email, subject: `Приглашение в команду ${company.name}`, html: `<h1>Вас пригласили!</h1><p>Компания <strong>${company.name}</strong> приглашает вас.</p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}">Принять</a>` });
-  } catch (e) { console.error(e); }
+  
+  const resend = getResend();
+  if (resend) {
+    try {
+      await resend.emails.send({ from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev', to: email, subject: `Приглашение в команду ${company.name}`, html: `<h1>Вас пригласили!</h1><p>Компания <strong>${company.name}</strong> приглашает вас.</p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}">Принять</a>` });
+    } catch (e) { console.error(e); }
+  }
 }
 
 export async function acceptInvitation(token: string): Promise<{ success: boolean; companyName?: string; error?: string }> {
