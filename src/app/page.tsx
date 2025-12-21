@@ -1,4 +1,5 @@
 import { getJobs, getSavedJobIds, JobFilters } from "@/lib/supabase-service";
+import { Job } from "@/types";
 import { Navbar } from "@/components/Navbar";
 import { JobCard } from "@/components/JobCard";
 import { FilterBar } from "@/components/FilterBar";
@@ -24,10 +25,18 @@ export default async function Home({
     salaryPeriod: params.salaryPeriod as 'hour' | 'month' | 'year',
   };
 
-  const [jobs, savedIds] = await Promise.all([
-    getJobs(filters),
-    getSavedJobIds()
-  ]);
+  let jobs: Job[] = [];
+  let savedIds: string[] = [];
+
+  try {
+    [jobs, savedIds] = await Promise.all([
+      getJobs(filters),
+      getSavedJobIds()
+    ]);
+  } catch (error) {
+    console.error('Error loading home page data:', error);
+    // Continue with empty data so the page renders
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
