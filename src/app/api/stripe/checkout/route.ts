@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 export async function POST(req: Request) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 });
+  }
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
   const { jobId, planId } = await req.json();
   
   // Определяем цену
