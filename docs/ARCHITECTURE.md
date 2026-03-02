@@ -12,11 +12,12 @@
 - **Forms:** React Hook Form + Zod (валидация схем).
 
 ### Database & Infrastructure
-- **Database:** PostgreSQL.
-- **ORM:** Prisma (для строгой типизации и удобных миграций).
-- **Auth:** Auth.js (ранее NextAuth.js) v5. Поддержка Credentials (email/password) и OAuth (Google).
-- **File Storage:** AWS S3 (или совместимое, например Cloudflare R2 / MinIO) — для хранения резюме и логотипов.
-- **Hosting:** Vercel (рекомендуется) или Docker-контейнер на VPS.
+- **Database:** PostgreSQL (Hosted on Supabase).
+- **ORM/Client:** Supabase Client (@supabase/supabase-js) + SSR Helpers (@supabase/ssr).
+- **Auth:** Supabase Auth (Built-in). Поддержка Email/Password, Magic Links и OAuth (Google).
+- **File Storage:** Supabase Storage (S3-compatible) — для хранения резюме и логотипов.
+- **Hosting:** Vercel.
+- **Real-time:** Supabase Realtime (для уведомлений и чатов).
 
 ## 2. Структура Базы Данных (ERD Overview)
 

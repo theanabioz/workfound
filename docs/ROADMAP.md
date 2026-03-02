@@ -2,11 +2,12 @@
 
 ## Phase 1: Setup & Infrastructure (Environment Initialization)
 - [ ] Initialize Next.js 14 Project (App Router, TypeScript).
-- [ ] Configure ESLint, Prettier, Husky (Git Hooks).
-- [ ] Install & Configure Chakra UI v2 + Framer Motion.
-- [ ] Set up PostgreSQL Database (Local Docker or Cloud).
-- [ ] Initialize Prisma ORM & Run first migration (User Schema).
-- [ ] Set up Authentication (Auth.js / NextAuth v5) - Email/Password Provider.
+- [ ] Configure ESLint, Prettier.
+- [ ] Install & Configure Chakra UI v2.
+- [ ] Set up Supabase Project & Connect via Environment Variables.
+- [ ] Configure Supabase Auth (Email/Password, SSR Middleware).
+- [ ] Define Database Schema & RLS Policies (Row Level Security).
+- [ ] Configure Supabase Storage (Buckets for resumes/logos).
 
 ## Phase 2: User Roles & Profiles (MVP Core)
 - [ ] Create Registration/Login Pages (UI + Logic).
