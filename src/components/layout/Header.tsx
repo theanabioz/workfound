@@ -31,13 +31,20 @@ import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 export default function Header() {
+  const pathname = usePathname()
   const { isOpen, onToggle } = useDisclosure()
   const [user, setUser] = useState<any>(null)
   const [role, setRole] = useState<string | null>(null)
   const supabase = createClient()
   const router = useRouter()
+
+  // Скрываем хедер на страницах дашборда
+  if (pathname?.startsWith('/dashboard')) {
+    return null
+  }
 
   useEffect(() => {
     const fetchUser = async () => {

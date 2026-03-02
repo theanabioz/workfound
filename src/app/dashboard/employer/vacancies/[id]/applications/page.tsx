@@ -23,7 +23,7 @@ import {
   TableContainer,
   Select,
 } from '@chakra-ui/react'
-import { User, Phone, Mail, ArrowLeft, FileText, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { User, Phone, Mail, ArrowLeft, FileText, CheckCircle, Clock, XCircle, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { IconButton } from '@chakra-ui/react'
@@ -128,7 +128,19 @@ export default async function EmployerApplicationsPage({
                       <StatusBadge status={app.status} />
                     </Td>
                     <Td>
-                      <StatusSelector applicationId={app.id} currentStatus={app.status} />
+                      <HStack spacing={2}>
+                        <StatusSelector applicationId={app.id} currentStatus={app.status} />
+                        <Button
+                          as={Link}
+                          href={`/dashboard/employer/applications/${app.id}`}
+                          size="sm"
+                          leftIcon={<Icon as={MessageSquare} size={14} />}
+                          colorScheme="blue"
+                          variant="ghost"
+                        >
+                          Чат
+                        </Button>
+                      </HStack>
                     </Td>
                   </Tr>
                 ))}

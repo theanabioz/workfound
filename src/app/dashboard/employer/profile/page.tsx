@@ -17,6 +17,7 @@ import {
   Divider,
   Badge,
   Flex,
+  InfoOutlineIcon
 } from '@chakra-ui/react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -48,7 +49,13 @@ export default function EmployerProfilePage() {
         return
       }
       setUserId(user.id)
-...
+
+      const { data, error } = await supabase
+        .from('employer_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
       if (data) {
         setProfile(data)
         setFormData({
@@ -141,7 +148,6 @@ export default function EmployerProfilePage() {
               <FormControl isRequired>
                 <FormLabel fontWeight="bold">Название компании</FormLabel>
                 <Input
-                  leftIcon={<Building2 size={18} />}
                   value={formData.company_name}
                   onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
                   placeholder="Например: EuroBuild Group"
@@ -179,7 +185,7 @@ export default function EmployerProfilePage() {
 
             <Box p={4} bg="blue.50" borderRadius="md" borderLeft="4px solid" borderColor="blue.400">
               <Flex align="center">
-                <Info size={20} color="#3182ce" />
+                <Icon as={Info} size={20} color="#3182ce" />
                 <Text ml={3} fontSize="sm" color="blue.700">
                   Полное и качественное описание компании повышает количество откликов на 40%.
                 </Text>

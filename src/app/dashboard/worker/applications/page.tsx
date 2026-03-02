@@ -22,7 +22,7 @@ import {
   Td,
   TableContainer,
 } from '@chakra-ui/react'
-import { ArrowLeft, Briefcase, MapPin, Clock, FileText, CheckCircle, XCircle, Search } from 'lucide-react'
+import { ArrowLeft, Briefcase, MapPin, Clock, FileText, CheckCircle, XCircle, Search, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { IconButton } from '@chakra-ui/react'
 
@@ -103,16 +103,29 @@ export default async function WorkerApplicationsPage() {
 
                     <Divider />
                     
-                    <Button
-                      as={Link}
-                      href={`/vacancies/${app.vacancies.id}`}
-                      variant="link"
-                      colorScheme="blue"
-                      size="sm"
-                      rightIcon={<Icon as={Search} size={14} />}
-                    >
-                      Посмотреть вакансию
-                    </Button>
+                    <HStack spacing={4}>
+                      <Button
+                        as={Link}
+                        href={`/dashboard/worker/applications/${app.id}`}
+                        variant="solid"
+                        colorScheme="blue"
+                        size="sm"
+                        leftIcon={<Icon as={MessageSquare} size={14} />}
+                        flex={1}
+                      >
+                        Чат
+                      </Button>
+                      <Button
+                        as={Link}
+                        href={`/vacancies/${app.vacancies.id}`}
+                        variant="ghost"
+                        colorScheme="gray"
+                        size="sm"
+                        leftIcon={<Icon as={Search} size={14} />}
+                      >
+                        Вакансия
+                      </Button>
+                    </HStack>
                   </Stack>
                 </CardBody>
               </Card>
