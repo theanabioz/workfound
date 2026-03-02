@@ -64,6 +64,8 @@
 - `locationCountry`: String
 - `locationCity`: String
 - `jobType`: Enum (`FULL_TIME`, `PART_TIME`, `CONTRACT`, `TEMPORARY`)
+- `contactMethod`: Enum (`APPLICATIONS`, `PHONE`, `BOTH`)
+- `contactPhone`: String?
 - `status`: Enum (`OPEN`, `CLOSED`, `ARCHIVED`)
 - `createdAt`: DateTime
 
