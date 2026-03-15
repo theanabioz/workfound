@@ -8,8 +8,13 @@ export default async function Home() {
   const supabase = await createClient();
   
   const { data: jobs, error } = await supabase
-    .from('jobs')
-    .select('*')
+    .from('vacancies')
+    .select(`
+      *,
+      employer:employer_id (
+        full_name
+      )
+    `)
     .eq('status', 'active')
     .order('created_at', { ascending: false });
 
@@ -104,7 +109,7 @@ export default async function Home() {
                 key={job.id}
                 id={job.id}
                 title={job.title}
-                company={job.company_name || 'Прямой работодатель'}
+                company={job.employer?.full_name || 'Прямой работодатель'}
                 location={job.location}
                 salary={job.salary}
                 tags={job.benefits || []}

@@ -51,9 +51,11 @@ export default function SeekerDashboard() {
             id,
             status,
             created_at,
-            jobs (
+            vacancies (
               title,
-              company_name
+              employer:employer_id (
+                full_name
+              )
             )
           `)
           .eq('applicant_id', user.id)
@@ -240,9 +242,9 @@ export default function SeekerDashboard() {
                 recentApps.map((app) => (
                   <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-5 py-3">
-                      <div className="font-medium text-slate-900">{app.jobs?.company_name || 'Неизвестная компания'}</div>
+                      <div className="font-medium text-slate-900">{app.vacancies?.employer?.full_name || 'Неизвестная компания'}</div>
                     </td>
-                    <td className="px-5 py-3 text-slate-600">{app.jobs?.title || 'Неизвестная вакансия'}</td>
+                    <td className="px-5 py-3 text-slate-600">{app.vacancies?.title || 'Неизвестная вакансия'}</td>
                     <td className="px-5 py-3 text-slate-500 font-mono text-xs">
                       {new Date(app.created_at).toLocaleDateString('ru-RU')}
                     </td>

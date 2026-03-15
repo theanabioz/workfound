@@ -45,11 +45,12 @@ export default function EmployerDashboard() {
           .from('applications')
           .select(`
             *,
-            jobs (
-              title
+            vacancies!inner (
+              title,
+              employer_id
             )
           `)
-          .eq('employer_id', user.id)
+          .eq('vacancies.employer_id', user.id)
           .order('created_at', { ascending: false })
           .limit(5);
 
@@ -58,7 +59,7 @@ export default function EmployerDashboard() {
 
         // Fetch stats
         const { count: activeJobsCount, error: jobsError } = await supabase
-          .from('jobs')
+          .from('vacancies')
           .select('*', { count: 'exact', head: true })
           .eq('employer_id', user.id)
           .eq('status', 'active');
@@ -67,8 +68,8 @@ export default function EmployerDashboard() {
 
         const { count: newAppsCount, error: newAppsError } = await supabase
           .from('applications')
-          .select('*', { count: 'exact', head: true })
-          .eq('employer_id', user.id)
+          .select('*, vacancies!inner(employer_id)', { count: 'exact', head: true })
+          .eq('vacancies.employer_id', user.id)
           .eq('status', 'new');
 
         if (newAppsError) throw newAppsError;
@@ -81,7 +82,7 @@ export default function EmployerDashboard() {
 
       } catch (err: any) {
         console.error('Error fetching dashboard data:', err);
-        setError('Не удалось загрузить данные панели управления.');
+        setError(`Не удалось загрузить данные панели управления. Ошибка: ${err.message || JSON.stringify(err)}`);
       } finally {
         setIsLoading(false);
       }
@@ -213,7 +214,7 @@ export default function EmployerDashboard() {
                     <td className="px-5 py-3">
                       <div className="font-medium text-slate-900">{app.contact_email}</div>
                     </td>
-                    <td className="px-5 py-3 text-slate-600">{app.jobs?.title || 'Неизвестная вакансия'}</td>
+                    <td className="px-5 py-3 text-slate-600">{app.vacancies?.title || 'Неизвестная вакансия'}</td>
                     <td className="px-5 py-3 text-slate-500 font-mono text-xs">
                       {new Date(app.created_at).toLocaleDateString('ru-RU')}
                     </td>

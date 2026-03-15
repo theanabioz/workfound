@@ -11,8 +11,7 @@ export default function ResumePage() {
   const [error, setError] = useState<string | null>(null);
 
   const [profile, setProfile] = useState({
-    first_name: '',
-    last_name: '',
+    full_name: '',
     phone: '',
     email: '',
     location: '',
@@ -48,8 +47,7 @@ export default function ResumePage() {
 
       if (data) {
         setProfile({
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
+          full_name: data.full_name || '',
           phone: data.phone || '',
           email: data.email || user.email || '',
           location: data.location || '',
@@ -82,10 +80,8 @@ export default function ResumePage() {
       const updates = {
         id: user.id,
         role: 'seeker',
-        first_name: profile.first_name,
-        last_name: profile.last_name,
+        full_name: profile.full_name,
         phone: profile.phone,
-        email: profile.email,
         location: profile.location,
         about: profile.about,
         desired_position: profile.desired_position,
@@ -149,13 +145,9 @@ export default function ResumePage() {
               Основная информация
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Имя</label>
-                <input type="text" name="first_name" value={profile.first_name} onChange={handleChange} placeholder="Иван" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Фамилия</label>
-                <input type="text" name="last_name" value={profile.last_name} onChange={handleChange} placeholder="Иванов" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-slate-700 mb-1">ФИО</label>
+                <input type="text" name="full_name" value={profile.full_name} onChange={handleChange} placeholder="Иванов Иван Иванович" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-slate-700 mb-1">Желаемая должность</label>

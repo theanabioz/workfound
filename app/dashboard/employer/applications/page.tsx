@@ -39,11 +39,12 @@ export default function EmployerApplicationsPage() {
           .from('applications')
           .select(`
             *,
-            jobs (
-              title
+            vacancies!inner (
+              title,
+              employer_id
             )
           `)
-          .eq('employer_id', user.id)
+          .eq('vacancies.employer_id', user.id)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -164,8 +165,8 @@ export default function EmployerApplicationsPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-slate-600">
-                      <Link href={`/jobs/${app.job_id}`} className="hover:text-blue-600 transition-colors flex items-center gap-1">
-                        {app.jobs?.title || 'Неизвестная вакансия'}
+                      <Link href={`/jobs/${app.vacancy_id}`} className="hover:text-blue-600 transition-colors flex items-center gap-1">
+                        {app.vacancies?.title || 'Неизвестная вакансия'}
                         <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-600" />
                       </Link>
                     </td>

@@ -11,7 +11,7 @@ export default function EmployerProfilePage() {
   const [error, setError] = useState<string | null>(null);
   
   const [profile, setProfile] = useState({
-    company_name: '',
+    full_name: '',
     industry: '',
     company_size: '',
     about: '',
@@ -49,7 +49,7 @@ export default function EmployerProfilePage() {
 
       if (data) {
         setProfile({
-          company_name: data.company_name || '',
+          full_name: data.full_name || '',
           industry: data.industry || '',
           company_size: data.company_size || '',
           about: data.about || '',
@@ -84,14 +84,13 @@ export default function EmployerProfilePage() {
       const updates = {
         id: user.id,
         role: 'employer',
-        company_name: profile.company_name,
+        full_name: profile.full_name,
+        phone: profile.phone,
         industry: profile.industry,
         company_size: profile.company_size,
         about: profile.about,
         location: profile.address,
         website: profile.website,
-        email: profile.email,
-        phone: profile.phone,
         updated_at: new Date().toISOString(),
       };
 
@@ -171,7 +170,7 @@ export default function EmployerProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-slate-700 mb-1">Название компании</label>
-                <input type="text" name="company_name" value={profile.company_name} onChange={handleChange} placeholder="Название компании" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                <input type="text" name="full_name" value={profile.full_name} onChange={handleChange} placeholder="Название компании" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Отрасль</label>

@@ -40,11 +40,13 @@ export default function ApplicationsPage() {
           .from('applications')
           .select(`
             *,
-            jobs (
+            vacancies (
               title,
-              company_name,
               location,
-              salary
+              salary,
+              employer:employer_id (
+                full_name
+              )
             )
           `)
           .eq('applicant_id', user.id)
@@ -148,15 +150,15 @@ export default function ApplicationsPage() {
                 applications.map((app) => (
                   <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-5 py-3">
-                      <Link href={`/jobs/${app.job_id}`} className="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                        {app.jobs?.title || 'Неизвестная вакансия'}
+                      <Link href={`/jobs/${app.vacancy_id}`} className="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                        {app.vacancies?.title || 'Неизвестная вакансия'}
                         <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </Link>
-                      <div className="text-xs text-slate-500 mt-0.5">{app.jobs?.location} • {app.jobs?.salary}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">{app.vacancies?.location} • {app.vacancies?.salary}</div>
                     </td>
                     <td className="px-5 py-3 text-slate-600 flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                      {app.jobs?.company_name || 'Прямой работодатель'}
+                      {app.vacancies?.employer?.full_name || 'Прямой работодатель'}
                     </td>
                     <td className="px-5 py-3 text-slate-500 font-mono text-xs">
                       {new Date(app.created_at).toLocaleDateString('ru-RU')}

@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { Briefcase, Mail, Lock, User as UserIcon, Building2, ArrowRight } from 'lucide-react';
 import { useState, Suspense } from 'react';
 import { login, signup } from './actions';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 function LoginForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState<'seeker' | 'employer'>('seeker');
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [message, setMessage] = useState<string | null>(searchParams.get('message'));
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -31,8 +32,10 @@ function LoginForm() {
       } else {
         setMessage(result.error);
       }
+    } else if (result?.success) {
+      router.push(`/dashboard/${result.role}`);
+      router.refresh();
     }
-    // If success, the server action will redirect, so we don't need to do anything else here
   };
 
   return (

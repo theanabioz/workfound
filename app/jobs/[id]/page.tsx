@@ -9,8 +9,13 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
   const supabase = await createClient();
 
   const { data: job, error } = await supabase
-    .from('jobs')
-    .select('*')
+    .from('vacancies')
+    .select(`
+      *,
+      employer:employer_id (
+        full_name
+      )
+    `)
     .eq('id', id)
     .single();
 
@@ -38,7 +43,7 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
                 <div>
                   <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3 tracking-tight">{job.title}</h1>
-                  <div className="text-xl text-slate-600 mb-6 font-medium">{job.company_name || 'Прямой работодатель'}</div>
+                  <div className="text-xl text-slate-600 mb-6 font-medium">{job.employer?.full_name || 'Прямой работодатель'}</div>
                   
                   <div className="flex flex-wrap gap-y-3 gap-x-6 text-sm text-slate-600">
                     <div className="flex items-center gap-2">
@@ -104,7 +109,7 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                   <Building2 className="w-8 h-8 text-slate-400" />
                 </div>
                 <div>
-                  <div className="font-bold text-slate-900 text-lg">{job.company_name || 'Прямой работодатель'}</div>
+                  <div className="font-bold text-slate-900 text-lg">{job.full_name || 'Прямой работодатель'}</div>
                 </div>
               </div>
 

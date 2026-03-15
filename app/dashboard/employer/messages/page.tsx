@@ -34,8 +34,7 @@ export default function EmployerMessagesPage() {
           *,
           seeker:seeker_id (
             id,
-            first_name,
-            last_name
+            full_name
           )
         `)
         .eq('employer_id', user.id)
@@ -50,7 +49,7 @@ export default function EmployerMessagesPage() {
         
         data.forEach((msg: any) => {
           const seekerId = msg.seeker_id;
-          const seekerName = msg.seeker ? `${msg.seeker.first_name} ${msg.seeker.last_name}` : 'Соискатель';
+          const seekerName = msg.seeker?.full_name || 'Соискатель';
           
           if (!groupedChats[seekerId]) {
             groupedChats[seekerId] = {

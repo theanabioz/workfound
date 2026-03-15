@@ -30,8 +30,8 @@ export default function SavedJobsPage() {
         .from('saved_jobs')
         .select(`
           id,
-          job_id,
-          jobs (*)
+          vacancy_id,
+          vacancies (*)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -40,8 +40,8 @@ export default function SavedJobsPage() {
       
       const formattedJobs = data?.map((item: any) => ({
         saved_id: item.id,
-        ...item.jobs,
-        postedAt: item.jobs?.created_at ? new Date(item.jobs.created_at).toLocaleDateString('ru-RU', {
+        ...item.vacancies,
+        postedAt: item.vacancies?.created_at ? new Date(item.vacancies.created_at).toLocaleDateString('ru-RU', {
           day: 'numeric',
           month: 'short'
         }) : ''
