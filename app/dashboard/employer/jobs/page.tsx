@@ -1,15 +1,24 @@
+'use client';
+
 import Link from 'next/link';
-import { Plus, MoreVertical, Eye, Users, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, MoreHorizontal, ExternalLink, Edit, Eye, EyeOff, Trash2, AlertTriangle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function EmployerJobsPage() {
-  const jobs = [
+  const router = useRouter();
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [jobs, setJobs] = useState([
     {
       id: 1,
       title: 'Водитель-дальнобойщик категории CE',
       status: 'active',
       views: 145,
       applications: 12,
-      postedAt: '10 Марта 2026',
+      postedAt: '10 Мар 2026',
     },
     {
       id: 2,
@@ -17,7 +26,7 @@ export default function EmployerJobsPage() {
       status: 'active',
       views: 89,
       applications: 5,
-      postedAt: '8 Марта 2026',
+      postedAt: '08 Мар 2026',
     },
     {
       id: 3,
@@ -33,65 +42,193 @@ export default function EmployerJobsPage() {
       status: 'closed',
       views: 320,
       applications: 45,
-      postedAt: '1 Февраля 2026',
+      postedAt: '01 Фев 2026',
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleDropdown = (id: number) => {
+    setOpenDropdownId(openDropdownId === id ? null : id);
+  };
+
+  const handleActivate = (id: number) => {
+    setJobs(jobs.map(job => job.id === id ? { ...job, status: 'active' } : job));
+    setOpenDropdownId(null);
+  };
+
+  const handleDeactivate = (id: number) => {
+    setJobs(jobs.map(job => job.id === id ? { ...job, status: 'closed' } : job));
+    setOpenDropdownId(null);
+  };
+
+  const handleEdit = (id: number) => {
+    setOpenDropdownId(null);
+    router.push(`/post-job?edit=${id}`);
+  };
+
+  const confirmDelete = () => {
+    if (jobToDelete !== null) {
+      setJobs(jobs.filter(job => job.id !== jobToDelete));
+      setJobToDelete(null);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-7xl mx-auto relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Мои вакансии</h1>
-          <p className="text-slate-500 mt-1 font-medium">Управление размещенными вакансиями</p>
+          <h1 className="text-2xl font-semibold text-slate-900">Мои вакансии</h1>
+          <p className="text-sm text-slate-500 mt-1">Управление размещенными вакансиями</p>
         </div>
-        <Link href="/post-job" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 flex items-center gap-2">
-          <Plus className="w-5 h-5" />
-          Разместить вакансию
+        <Link href="/post-job" className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
+          <Plus className="w-4 h-4" />
+          Новая вакансия
         </Link>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200/75 shadow-sm overflow-hidden">
-        <div className="divide-y divide-slate-100">
-          {jobs.map((job) => (
-            <div key={job.id} className="p-6 sm:p-8 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <Link href={`/jobs/${job.id}`} className="text-xl font-bold text-slate-900 hover:text-blue-600 transition-colors">
-                    {job.title}
-                  </Link>
-                  {job.status === 'active' && <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">Активна</span>}
-                  {job.status === 'draft' && <span className="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">Черновик</span>}
-                  {job.status === 'closed' && <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">Закрыта</span>}
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm text-slate-500">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    {job.postedAt}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Eye className="w-4 h-4 text-slate-400" />
-                    {job.views} просмотров
-                  </div>
-                  <div className="flex items-center gap-1.5 font-medium text-blue-600">
-                    <Users className="w-4 h-4" />
-                    {job.applications} откликов
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 shrink-0">
-                <Link href={`/dashboard/employer/applications?jobId=${job.id}`} className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl font-semibold text-sm transition-colors">
-                  Смотреть отклики
-                </Link>
-                <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-100">
-                  <MoreVertical className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          ))}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto min-h-[300px]">
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-5 py-3 font-medium">Вакансия</th>
+                <th className="px-5 py-3 font-medium">Статус</th>
+                <th className="px-5 py-3 font-medium">Дата публикации</th>
+                <th className="px-5 py-3 font-medium text-right">Просмотры</th>
+                <th className="px-5 py-3 font-medium text-right">Отклики</th>
+                <th className="px-5 py-3 font-medium text-right">Действия</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {jobs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">
+                    У вас пока нет размещенных вакансий.
+                  </td>
+                </tr>
+              ) : (
+                jobs.map((job) => (
+                  <tr key={job.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-5 py-3">
+                      <Link href={`/jobs/${job.id}`} className="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                        {job.title}
+                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3">
+                      {job.status === 'active' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-emerald-100 text-emerald-700 border-emerald-200">Активна</span>}
+                      {job.status === 'draft' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-amber-100 text-amber-700 border-amber-200">Черновик</span>}
+                      {job.status === 'closed' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-slate-100 text-slate-700 border-slate-200">Закрыта</span>}
+                    </td>
+                    <td className="px-5 py-3 text-slate-500 font-mono text-xs">{job.postedAt}</td>
+                    <td className="px-5 py-3 text-right text-slate-600 font-mono text-xs">{job.views}</td>
+                    <td className="px-5 py-3 text-right">
+                      {job.applications > 0 ? (
+                        <Link href={`/dashboard/employer/applications?jobId=${job.id}`} className="text-blue-600 font-medium hover:underline font-mono text-xs">
+                          {job.applications}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-400 font-mono text-xs">0</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-right relative">
+                      <button 
+                        onClick={() => toggleDropdown(job.id)}
+                        className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                      
+                      {openDropdownId === job.id && (
+                        <div 
+                          ref={dropdownRef}
+                          className="absolute right-5 top-10 w-max min-w-[12rem] bg-white rounded-md shadow-lg border border-slate-200 z-10 py-1 text-left"
+                        >
+                          <button 
+                            onClick={() => handleEdit(job.id)}
+                            className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap"
+                          >
+                            <Edit className="w-4 h-4 text-slate-400" />
+                            Редактировать
+                          </button>
+                          {job.status !== 'active' ? (
+                            <button 
+                              onClick={() => handleActivate(job.id)}
+                              className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap"
+                            >
+                              <Eye className="w-4 h-4 text-slate-400" />
+                              Активировать
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => handleDeactivate(job.id)}
+                              className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap"
+                            >
+                              <EyeOff className="w-4 h-4 text-slate-400" />
+                              Деактивировать
+                            </button>
+                          )}
+                          <div className="h-px bg-slate-200 my-1"></div>
+                          <button 
+                            onClick={() => {
+                              setJobToDelete(job.id);
+                              setOpenDropdownId(null);
+                            }}
+                            className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 whitespace-nowrap"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                            Удалить
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {jobToDelete !== null && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] px-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Удалить вакансию?</h3>
+              <p className="text-sm text-slate-500">
+                Это действие нельзя отменить. Вакансия и все отклики на нее будут безвозвратно удалены из системы.
+              </p>
+            </div>
+            <div className="bg-slate-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-slate-200">
+              <button 
+                onClick={() => setJobToDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 bg-slate-100 rounded-md transition-colors"
+              >
+                Отмена
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors shadow-sm"
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

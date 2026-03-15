@@ -2,10 +2,12 @@ import JobCard from '@/components/jobs/JobCard';
 
 export default function SavedJobsPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Сохраненные вакансии</h1>
-        <p className="text-slate-500 mt-1 font-medium">Вакансии, которые вы добавили в избранное</p>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Сохраненные вакансии</h1>
+          <p className="text-sm text-slate-500 mt-1">Вакансии, которые вы добавили в избранное</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4">

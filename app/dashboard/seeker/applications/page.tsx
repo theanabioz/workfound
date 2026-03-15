@@ -1,4 +1,4 @@
-import { Building2, MapPin, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Building2, MapPin, Clock, CheckCircle2, XCircle, AlertCircle, MoreHorizontal, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ApplicationsPage() {
@@ -9,7 +9,7 @@ export default function ApplicationsPage() {
       company: 'TransLogistics GmbH',
       location: 'Германия, Мюнхен',
       salary: '€2,500 - €3,000',
-      appliedDate: '12 Марта 2026',
+      appliedDate: '12 Мар 2026',
       status: 'review', // review, accepted, rejected, sent
     },
     {
@@ -18,7 +18,7 @@ export default function ApplicationsPage() {
       company: 'BuildEuro Sp. z o.o.',
       location: 'Польша, Варшава',
       salary: 'от €1,800',
-      appliedDate: '10 Марта 2026',
+      appliedDate: '10 Мар 2026',
       status: 'accepted',
     },
     {
@@ -27,7 +27,7 @@ export default function ApplicationsPage() {
       company: 'MetalWorks s.r.o.',
       location: 'Чехия, Прага',
       salary: '€2,000 - €2,400',
-      appliedDate: '8 Марта 2026',
+      appliedDate: '08 Мар 2026',
       status: 'sent',
     },
     {
@@ -36,7 +36,7 @@ export default function ApplicationsPage() {
       company: 'EcoEnergy B.V.',
       location: 'Нидерланды, Амстердам',
       salary: '€2,200 - €2,800',
-      appliedDate: '1 Марта 2026',
+      appliedDate: '01 Мар 2026',
       status: 'rejected',
     }
   ];
@@ -44,64 +44,70 @@ export default function ApplicationsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'accepted':
-        return <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider"><CheckCircle2 className="w-4 h-4" /> Приглашение</span>;
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-emerald-100 text-emerald-700 border-emerald-200">Приглашение</span>;
       case 'review':
-        return <span className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider"><AlertCircle className="w-4 h-4" /> Просмотрено</span>;
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-blue-100 text-blue-700 border-blue-200">Просмотрено</span>;
       case 'rejected':
-        return <span className="flex items-center gap-1.5 bg-red-50 text-red-700 px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider"><XCircle className="w-4 h-4" /> Отказ</span>;
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-red-100 text-red-700 border-red-200">Отказ</span>;
       default:
-        return <span className="flex items-center gap-1.5 bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider"><Clock className="w-4 h-4" /> Отправлено</span>;
+        return <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-slate-100 text-slate-700 border-slate-200">Отправлено</span>;
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Мои отклики</h1>
-        <p className="text-slate-500 mt-1 font-medium">История ваших откликов на вакансии</p>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Мои отклики</h1>
+          <p className="text-sm text-slate-500 mt-1">История откликов на вакансии</p>
+        </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200/75 shadow-sm overflow-hidden">
-        <div className="divide-y divide-slate-100">
-          {applications.map((app) => (
-            <div key={app.id} className="p-6 sm:p-8 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex-1">
-                <Link href={`/jobs/${app.id}`} className="text-xl font-bold text-slate-900 hover:text-blue-600 transition-colors block mb-2">
-                  {app.jobTitle}
-                </Link>
-                <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-sm text-slate-600 mb-4">
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <Building2 className="w-4 h-4 text-slate-400" />
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-5 py-3 font-medium">Вакансия</th>
+                <th className="px-5 py-3 font-medium">Компания</th>
+                <th className="px-5 py-3 font-medium">Дата отклика</th>
+                <th className="px-5 py-3 font-medium">Статус</th>
+                <th className="px-5 py-3 font-medium text-right">Действия</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {applications.map((app) => (
+                <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-5 py-3">
+                    <Link href={`/jobs/${app.id}`} className="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                      {app.jobTitle}
+                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Link>
+                    <div className="text-xs text-slate-500 mt-0.5">{app.location} • {app.salary}</div>
+                  </td>
+                  <td className="px-5 py-3 text-slate-600 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
                     {app.company}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-slate-400" />
-                    {app.location}
-                  </div>
-                  <div className="font-semibold text-emerald-700">
-                    {app.salary}
-                  </div>
-                </div>
-                <div className="text-sm text-slate-400 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4" />
-                  Отправлено: {app.appliedDate}
-                </div>
-              </div>
-              
-              <div className="flex flex-col items-start md:items-end gap-4 shrink-0">
-                {getStatusBadge(app.status)}
-                
-                {app.status === 'accepted' && (
-                  <Link href="/dashboard/seeker/messages" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm shadow-blue-600/20">
-                    Написать работодателю
-                  </Link>
-                )}
-                {app.status === 'review' && (
-                  <span className="text-sm text-slate-500 font-medium">Работодатель изучает резюме</span>
-                )}
-              </div>
-            </div>
-          ))}
+                  </td>
+                  <td className="px-5 py-3 text-slate-500 font-mono text-xs">{app.appliedDate}</td>
+                  <td className="px-5 py-3">
+                    {getStatusBadge(app.status)}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    {app.status === 'accepted' ? (
+                      <Link href="/dashboard/seeker/messages" className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors inline-block">
+                        Чат
+                      </Link>
+                    ) : (
+                      <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
