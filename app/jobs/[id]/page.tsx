@@ -1,8 +1,26 @@
 import Header from '@/components/layout/Header';
 import { MapPin, Banknote, Clock, Building2, CheckCircle2, Phone, MessageCircle, ShieldCheck, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/server';
+import { notFound } from 'next/navigation';
 
-export default function JobDetailsPage() {
+export default async function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: job, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !job) {
+    notFound();
+  }
+
+  // Split description by newlines for better formatting
+  const descriptionParagraphs = job.description ? job.description.split('\n').filter((p: string) => p.trim() !== '') : [];
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       <Header />
@@ -19,29 +37,31 @@ export default function JobDetailsPage() {
             <div className="bg-white rounded-3xl border border-slate-200/75 p-6 md:p-10 mb-6 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3 tracking-tight">Водитель-дальнобойщик категории CE</h1>
-                  <div className="text-xl text-slate-600 mb-6 font-medium">TransLogistics GmbH</div>
+                  <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3 tracking-tight">{job.title}</h1>
+                  <div className="text-xl text-slate-600 mb-6 font-medium">{job.company_name || 'Прямой работодатель'}</div>
                   
                   <div className="flex flex-wrap gap-y-3 gap-x-6 text-sm text-slate-600">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-5 h-5 text-slate-400" />
-                      Германия, Мюнхен
+                      {job.location}
                     </div>
-                    <div className="flex items-center gap-2 font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg text-base">
-                      <Banknote className="w-5 h-5 text-emerald-600" />
-                      €2,500 - €3,000 на руки
-                    </div>
+                    {job.salary && (
+                      <div className="flex items-center gap-2 font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg text-base">
+                        <Banknote className="w-5 h-5 text-emerald-600" />
+                        {job.salary}
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <Clock className="w-5 h-5 text-slate-400" />
-                      Полная занятость
+                      {new Date(job.created_at).toLocaleDateString('ru-RU')}
                     </div>
                   </div>
                 </div>
                 
                 <div className="shrink-0 flex flex-col gap-3 w-full md:w-auto">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 w-full text-center">
+                  <Link href={`/jobs/${id}/apply`} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 w-full text-center block">
                     Откликнуться
-                  </button>
+                  </Link>
                   <button className="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-semibold transition-all shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 w-full flex items-center justify-center gap-2">
                     <MessageCircle className="w-5 h-5" />
                     Написать в WhatsApp
@@ -53,62 +73,22 @@ export default function JobDetailsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-10 pb-10 border-b border-slate-100">
-                <span className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold">Жилье предоставляется</span>
-                <span className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold">Официальное трудоустройство</span>
-                <span className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold">Русскоязычный диспетчер</span>
-              </div>
+              {job.benefits && job.benefits.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-10 pb-10 border-b border-slate-100">
+                  {job.benefits.map((benefit: string, i: number) => (
+                    <span key={i} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold">{benefit}</span>
+                  ))}
+                </div>
+              )}
 
               <div className="space-y-10">
                 <section>
                   <h2 className="text-2xl font-bold text-slate-900 mb-5 tracking-tight">Описание вакансии</h2>
                   <div className="text-slate-700 space-y-4 leading-relaxed text-lg">
-                    <p>
-                      Немецкая транспортная компания TransLogistics GmbH приглашает на работу водителей-дальнобойщиков категории CE для работы по Европе (Германия, Франция, Бенилюкс).
-                    </p>
-                    <p>
-                      Мы предлагаем стабильную работу в надежной компании с современным автопарком (Mercedes Actros, MAN TGX не старше 3 лет). Тенты и рефрижераторы.
-                    </p>
+                    {descriptionParagraphs.map((p: string, i: number) => (
+                      <p key={i}>{p}</p>
+                    ))}
                   </div>
-                </section>
-
-                <section>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-5 tracking-tight">Требования</h2>
-                  <ul className="space-y-3">
-                    {[
-                      'Наличие водительского удостоверения категории CE',
-                      'Опыт работы по Европе от 1 года',
-                      'Наличие чип-карты тахографа',
-                      'Код 95 (помогаем с оформлением)',
-                      'Базовое понимание немецкого или английского (приветствуется, но не обязательно - есть русскоязычные диспетчеры)',
-                      'Ответственность, отсутствие вредных привычек'
-                    ].map((req, i) => (
-                      <li key={i} className="flex items-start gap-3 text-slate-700 text-lg">
-                        <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-
-                <section>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-5 tracking-tight">Условия работы</h2>
-                  <ul className="space-y-3">
-                    {[
-                      'Официальное трудоустройство по немецкому контракту',
-                      'Зарплата от €2,500 до €3,000 нетто (на руки)',
-                      'Своевременные выплаты 2 раза в месяц',
-                      'График работы: 4/1, 6/2, 8/2 (обсуждается индивидуально)',
-                      'Бесплатное комфортное жилье на базе (душ, кухня, стиральная машина, Wi-Fi)',
-                      'Оплачиваемый отпуск 24 дня в году',
-                      'Медицинская страховка'
-                    ].map((cond, i) => (
-                      <li key={i} className="flex items-start gap-3 text-slate-700 text-lg">
-                        <CheckCircle2 className="w-6 h-6 text-blue-500 shrink-0 mt-0.5" />
-                        <span>{cond}</span>
-                      </li>
-                    ))}
-                  </ul>
                 </section>
               </div>
             </div>
@@ -124,8 +104,7 @@ export default function JobDetailsPage() {
                   <Building2 className="w-8 h-8 text-slate-400" />
                 </div>
                 <div>
-                  <div className="font-bold text-slate-900 text-lg">TransLogistics GmbH</div>
-                  <div className="text-sm text-slate-500 font-medium">На сайте с 2022 года</div>
+                  <div className="font-bold text-slate-900 text-lg">{job.company_name || 'Прямой работодатель'}</div>
                 </div>
               </div>
 
@@ -137,21 +116,13 @@ export default function JobDetailsPage() {
               <div className="space-y-4 text-sm text-slate-600 mb-8">
                 <div className="flex justify-between items-center pb-3 border-b border-slate-100">
                   <span className="text-slate-500">Сфера:</span>
-                  <span className="font-semibold text-slate-900">Логистика</span>
-                </div>
-                <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-                  <span className="text-slate-500">Штат:</span>
-                  <span className="font-semibold text-slate-900">50-100 человек</span>
+                  <span className="font-semibold text-slate-900">{job.category || 'Не указана'}</span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-slate-100">
                   <span className="text-slate-500">Локация:</span>
-                  <span className="font-semibold text-slate-900">Германия</span>
+                  <span className="font-semibold text-slate-900">{job.location}</span>
                 </div>
               </div>
-
-              <Link href="/companies/1" className="block w-full text-center bg-slate-50 hover:bg-slate-100 text-blue-600 font-semibold py-3 rounded-xl transition-colors border border-slate-200">
-                Все вакансии компании (12)
-              </Link>
             </div>
           </aside>
         </div>

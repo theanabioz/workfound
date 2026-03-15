@@ -1,19 +1,25 @@
 'use client';
 
-import { FileText, Send, Bookmark, ChevronRight, CheckCircle2, AlertCircle, MoreHorizontal, Trash2, AlertTriangle } from 'lucide-react';
+import { FileText, Send, Bookmark, ChevronRight, CheckCircle2, AlertCircle, MoreHorizontal, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export default function SeekerDashboard() {
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const [appToDelete, setAppToDelete] = useState<number | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [appToDelete, setAppToDelete] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
 
-  const [recentApps, setRecentApps] = useState([
-    { id: 1, company: 'TransLogistics GmbH', job: 'Водитель-дальнобойщик категории CE', date: '15 Мар 2026', status: 'Просмотрено', statusColor: 'bg-blue-100 text-blue-700 border-blue-200' },
-    { id: 2, company: 'BuildEuro Sp. z o.o.', job: 'Строитель-универсал', date: '14 Мар 2026', status: 'Приглашение', statusColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    { id: 3, company: 'MetalWorks s.r.o.', job: 'Сварщик MIG/MAG', date: '10 Мар 2026', status: 'Отправлено', statusColor: 'bg-slate-100 text-slate-700 border-slate-200' },
-  ]);
+  const [recentApps, setRecentApps] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalApplications: 0,
+    invitations: 0,
+    savedJobs: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -25,16 +31,118 @@ export default function SeekerDashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleDropdown = (id: number) => {
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setError('Пользователь не авторизован');
+          setIsLoading(false);
+          return;
+        }
+
+        setUserEmail(user.email || null);
+
+        // Fetch recent applications
+        const { data: appsData, error: appsError } = await supabase
+          .from('applications')
+          .select(`
+            id,
+            status,
+            created_at,
+            jobs (
+              title,
+              company_name
+            )
+          `)
+          .eq('applicant_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (appsError) throw appsError;
+        setRecentApps(appsData || []);
+
+        // Fetch stats
+        const { count: totalAppsCount, error: totalAppsError } = await supabase
+          .from('applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('applicant_id', user.id);
+
+        if (totalAppsError) throw totalAppsError;
+
+        const { count: invitationsCount, error: invitationsError } = await supabase
+          .from('applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('applicant_id', user.id)
+          .eq('status', 'accepted');
+
+        if (invitationsError) throw invitationsError;
+
+        const { count: savedJobsCount, error: savedJobsError } = await supabase
+          .from('saved_jobs')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        if (savedJobsError) throw savedJobsError;
+
+        setStats({
+          totalApplications: totalAppsCount || 0,
+          invitations: invitationsCount || 0,
+          savedJobs: savedJobsCount || 0
+        });
+
+      } catch (err: any) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Не удалось загрузить данные панели управления.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [supabase]);
+
+  const toggleDropdown = (id: string) => {
     setOpenDropdownId(openDropdownId === id ? null : id);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (appToDelete !== null) {
-      setRecentApps(recentApps.filter(app => app.id !== appToDelete));
-      setAppToDelete(null);
+      try {
+        const { error } = await supabase
+          .from('applications')
+          .delete()
+          .eq('id', appToDelete);
+
+        if (error) throw error;
+
+        setRecentApps(recentApps.filter(app => app.id !== appToDelete));
+        setStats(prev => ({ ...prev, totalApplications: Math.max(0, prev.totalApplications - 1) }));
+      } catch (err) {
+        console.error('Error deleting application:', err);
+        alert('Не удалось отозвать отклик.');
+      } finally {
+        setAppToDelete(null);
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto relative">
@@ -42,9 +150,9 @@ export default function SeekerDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Личный кабинет</h1>
-          <p className="text-sm text-slate-500 mt-1">Алексей Смирнов • ID: 84729</p>
+          <p className="text-sm text-slate-500 mt-1">{userEmail || 'Соискатель'}</p>
         </div>
-        <Link href="/jobs" className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm">
+        <Link href="/" className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm">
           Поиск вакансий
         </Link>
       </div>
@@ -69,7 +177,7 @@ export default function SeekerDashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-slate-500">Мои отклики</p>
-              <h3 className="text-2xl font-semibold text-slate-900 mt-1 font-mono tracking-tight">5</h3>
+              <h3 className="text-2xl font-semibold text-slate-900 mt-1 font-mono tracking-tight">{stats.totalApplications}</h3>
             </div>
             <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
               <Send className="w-4 h-4 text-slate-500" />
@@ -81,7 +189,7 @@ export default function SeekerDashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-slate-500">Приглашения</p>
-              <h3 className="text-2xl font-semibold text-slate-900 mt-1 font-mono tracking-tight">1</h3>
+              <h3 className="text-2xl font-semibold text-slate-900 mt-1 font-mono tracking-tight">{stats.invitations}</h3>
             </div>
             <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
               <CheckCircle2 className="w-4 h-4 text-slate-500" />
@@ -93,7 +201,7 @@ export default function SeekerDashboard() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-slate-500">Сохраненные</p>
-              <h3 className="text-2xl font-semibold text-slate-900 mt-1 font-mono tracking-tight">3</h3>
+              <h3 className="text-2xl font-semibold text-slate-900 mt-1 font-mono tracking-tight">{stats.savedJobs}</h3>
             </div>
             <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
               <Bookmark className="w-4 h-4 text-slate-500" />
@@ -132,17 +240,20 @@ export default function SeekerDashboard() {
                 recentApps.map((app) => (
                   <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-5 py-3">
-                      <div className="font-medium text-slate-900">{app.company}</div>
+                      <div className="font-medium text-slate-900">{app.jobs?.company_name || 'Неизвестная компания'}</div>
                     </td>
-                    <td className="px-5 py-3 text-slate-600">{app.job}</td>
-                    <td className="px-5 py-3 text-slate-500 font-mono text-xs">{app.date}</td>
+                    <td className="px-5 py-3 text-slate-600">{app.jobs?.title || 'Неизвестная вакансия'}</td>
+                    <td className="px-5 py-3 text-slate-500 font-mono text-xs">
+                      {new Date(app.created_at).toLocaleDateString('ru-RU')}
+                    </td>
                     <td className="px-5 py-3">
-                      <span className={`px-2.5 py-1 rounded-md text-[11px] font-medium border whitespace-nowrap ${app.statusColor}`}>
-                        {app.status}
-                      </span>
+                      {app.status === 'new' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-blue-100 text-blue-700 border-blue-200 whitespace-nowrap">Отправлено</span>}
+                      {app.status === 'review' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-amber-100 text-amber-700 border-amber-200 whitespace-nowrap">Просмотрено</span>}
+                      {app.status === 'accepted' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-emerald-100 text-emerald-700 border-emerald-200 whitespace-nowrap">Приглашение</span>}
+                      {app.status === 'rejected' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-slate-100 text-slate-700 border-slate-200 whitespace-nowrap">Отказ</span>}
                     </td>
                     <td className="px-5 py-3 text-right relative">
-                      {app.status === 'Приглашение' ? (
+                      {app.status === 'accepted' ? (
                         <Link href="/dashboard/seeker/messages" className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors inline-block">
                           Чат
                         </Link>

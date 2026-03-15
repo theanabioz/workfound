@@ -1,21 +1,123 @@
 'use client';
 
 import { Save, Building, MapPin, Globe, Mail, Phone, UploadCloud, CheckCircle2, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export default function EmployerProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [profile, setProfile] = useState({
+    company_name: '',
+    industry: '',
+    company_size: '',
+    about: '',
+    address: '',
+    website: '',
+    email: '',
+    phone: ''
+  });
 
-  const handleSave = () => {
+  const supabase = createClient();
+
+  useEffect(() => {
+    fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchProfile() {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Необходима авторизация');
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data) {
+        setProfile({
+          company_name: data.company_name || '',
+          industry: data.industry || '',
+          company_size: data.company_size || '',
+          about: data.about || '',
+          address: data.location || '',
+          website: data.website || '',
+          email: data.email || user.email || '',
+          phone: data.phone || ''
+        });
+      } else {
+        setProfile(prev => ({ ...prev, email: user.email || '' }));
+      }
+    } catch (err: any) {
+      console.error('Error fetching profile:', err);
+      setError('Не удалось загрузить профиль.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setProfile(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
+    setError(null);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Необходима авторизация');
+
+      const updates = {
+        id: user.id,
+        role: 'employer',
+        company_name: profile.company_name,
+        industry: profile.industry,
+        company_size: profile.company_size,
+        about: profile.about,
+        location: profile.address,
+        website: profile.website,
+        email: profile.email,
+        phone: profile.phone,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(updates);
+
+      if (error) throw error;
+
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    }, 1000);
+    } catch (err: any) {
+      console.error('Error saving profile:', err);
+      setError('Ошибка при сохранении профиля.');
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -23,6 +125,12 @@ export default function EmployerProfilePage() {
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Профиль компании</h1>
         <p className="text-sm text-slate-500 mt-1">Информация о вашей компании для соискателей</p>
       </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm">
+          {error}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden relative">
         {/* Success Toast */}
@@ -63,28 +171,32 @@ export default function EmployerProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-slate-700 mb-1">Название компании</label>
-                <input type="text" defaultValue="TransLogistics GmbH" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                <input type="text" name="company_name" value={profile.company_name} onChange={handleChange} placeholder="Название компании" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Отрасль</label>
-                <select className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm appearance-none">
-                  <option>Транспорт и логистика</option>
-                  <option>Строительство</option>
-                  <option>Производство</option>
+                <select name="industry" value={profile.industry} onChange={handleChange} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm appearance-none">
+                  <option value="">Выберите отрасль</option>
+                  <option value="Транспорт и логистика">Транспорт и логистика</option>
+                  <option value="Строительство">Строительство</option>
+                  <option value="Производство">Производство</option>
+                  <option value="ИТ и Телеком">ИТ и Телеком</option>
+                  <option value="Другое">Другое</option>
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Размер компании</label>
-                <select className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm appearance-none">
-                  <option>50-200 сотрудников</option>
-                  <option>1-10 сотрудников</option>
-                  <option>10-50 сотрудников</option>
-                  <option>Более 200 сотрудников</option>
+                <select name="company_size" value={profile.company_size} onChange={handleChange} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm appearance-none">
+                  <option value="">Выберите размер</option>
+                  <option value="1-10 сотрудников">1-10 сотрудников</option>
+                  <option value="10-50 сотрудников">10-50 сотрудников</option>
+                  <option value="50-200 сотрудников">50-200 сотрудников</option>
+                  <option value="Более 200 сотрудников">Более 200 сотрудников</option>
                 </select>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-slate-700 mb-1">Описание компании</label>
-                <textarea rows={5} defaultValue="Ведущая логистическая компания в Германии. Мы занимаемся международными перевозками по всей Европе более 15 лет. В нашем автопарке современные тягачи стандарта Евро-6." className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm resize-none"></textarea>
+                <textarea name="about" value={profile.about} onChange={handleChange} rows={5} placeholder="Опишите вашу компанию..." className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm resize-none"></textarea>
               </div>
             </div>
           </section>
@@ -99,40 +211,50 @@ export default function EmployerProfilePage() {
                 <label className="block text-xs font-medium text-slate-700 mb-1">Штаб-квартира (Адрес)</label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input type="text" defaultValue="Мюнхен, Германия" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                  <input type="text" name="address" value={profile.address} onChange={handleChange} placeholder="Город, Страна, Улица" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Сайт</label>
                 <div className="relative">
                   <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input type="url" defaultValue="https://translogistics.de" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                  <input type="url" name="website" value={profile.website} onChange={handleChange} placeholder="https://example.com" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Email для соискателей</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Email для связи</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input type="email" defaultValue="hr@translogistics.de" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                  <input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="contact@example.com" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Телефон</label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input type="tel" name="phone" value={profile.phone} onChange={handleChange} placeholder="+1 234 567 8900" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
                 </div>
               </div>
             </div>
           </section>
-
         </div>
-        
-        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+
+        {/* Footer Actions */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+          <button className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+            Отмена
+          </button>
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-md text-sm font-medium transition-colors shadow-sm flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Save className="w-4 h-4" />
             )}
-            {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
+            Сохранить изменения
           </button>
         </div>
       </div>

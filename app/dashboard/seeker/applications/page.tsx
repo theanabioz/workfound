@@ -1,52 +1,19 @@
 'use client';
 
-import { Building2, MapPin, Clock, CheckCircle2, XCircle, AlertCircle, MoreHorizontal, ExternalLink, Trash2, AlertTriangle } from 'lucide-react';
+import { Building2, MapPin, Clock, CheckCircle2, XCircle, AlertCircle, MoreHorizontal, ExternalLink, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export default function ApplicationsPage() {
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const [appToDelete, setAppToDelete] = useState<number | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [appToDelete, setAppToDelete] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
 
-  const [applications, setApplications] = useState([
-    {
-      id: 1,
-      jobTitle: 'Водитель-дальнобойщик категории CE',
-      company: 'TransLogistics GmbH',
-      location: 'Германия, Мюнхен',
-      salary: '€2,500 - €3,000',
-      appliedDate: '12 Мар 2026',
-      status: 'review', // review, accepted, rejected, sent
-    },
-    {
-      id: 2,
-      jobTitle: 'Строитель-универсал',
-      company: 'BuildEuro Sp. z o.o.',
-      location: 'Польша, Варшава',
-      salary: 'от €1,800',
-      appliedDate: '10 Мар 2026',
-      status: 'accepted',
-    },
-    {
-      id: 3,
-      jobTitle: 'Сварщик MIG/MAG',
-      company: 'MetalWorks s.r.o.',
-      location: 'Чехия, Прага',
-      salary: '€2,000 - €2,400',
-      appliedDate: '08 Мар 2026',
-      status: 'sent',
-    },
-    {
-      id: 4,
-      jobTitle: 'Монтажник солнечных панелей',
-      company: 'EcoEnergy B.V.',
-      location: 'Нидерланды, Амстердам',
-      salary: '€2,200 - €2,800',
-      appliedDate: '01 Мар 2026',
-      status: 'rejected',
-    }
-  ]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -58,14 +25,65 @@ export default function ApplicationsPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleDropdown = (id: number) => {
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setError('Пользователь не авторизован');
+          setIsLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('applications')
+          .select(`
+            *,
+            jobs (
+              title,
+              company_name,
+              location,
+              salary
+            )
+          `)
+          .eq('applicant_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setApplications(data || []);
+      } catch (err: any) {
+        console.error('Error fetching applications:', err);
+        setError('Не удалось загрузить отклики.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchApplications();
+  }, [supabase]);
+
+  const toggleDropdown = (id: string) => {
     setOpenDropdownId(openDropdownId === id ? null : id);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (appToDelete !== null) {
-      setApplications(applications.filter(app => app.id !== appToDelete));
-      setAppToDelete(null);
+      try {
+        const { error } = await supabase
+          .from('applications')
+          .delete()
+          .eq('id', appToDelete);
+
+        if (error) throw error;
+
+        setApplications(applications.filter(app => app.id !== appToDelete));
+      } catch (err) {
+        console.error('Error deleting application:', err);
+        alert('Не удалось отозвать отклик.');
+      } finally {
+        setAppToDelete(null);
+      }
     }
   };
 
@@ -81,6 +99,22 @@ export default function ApplicationsPage() {
         return <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-slate-100 text-slate-700 border-slate-200 whitespace-nowrap">Отправлено</span>;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto relative">
@@ -114,17 +148,19 @@ export default function ApplicationsPage() {
                 applications.map((app) => (
                   <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-5 py-3">
-                      <Link href={`/jobs/${app.id}`} className="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                        {app.jobTitle}
+                      <Link href={`/jobs/${app.job_id}`} className="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                        {app.jobs?.title || 'Неизвестная вакансия'}
                         <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </Link>
-                      <div className="text-xs text-slate-500 mt-0.5">{app.location} • {app.salary}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">{app.jobs?.location} • {app.jobs?.salary}</div>
                     </td>
                     <td className="px-5 py-3 text-slate-600 flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                      {app.company}
+                      {app.jobs?.company_name || 'Прямой работодатель'}
                     </td>
-                    <td className="px-5 py-3 text-slate-500 font-mono text-xs">{app.appliedDate}</td>
+                    <td className="px-5 py-3 text-slate-500 font-mono text-xs">
+                      {new Date(app.created_at).toLocaleDateString('ru-RU')}
+                    </td>
                     <td className="px-5 py-3">
                       {getStatusBadge(app.status)}
                     </td>

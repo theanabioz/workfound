@@ -2,8 +2,17 @@ import Header from '@/components/layout/Header';
 import JobFilters from '@/components/jobs/JobFilters';
 import JobCard from '@/components/jobs/JobCard';
 import { Search, MapPin } from 'lucide-react';
+import { createClient } from '@/utils/supabase/server';
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  
+  const { data: jobs, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false });
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       <Header />
@@ -78,43 +87,33 @@ export default function Home() {
           </div>
           
           <div className="space-y-4">
-            <JobCard 
-              id="1"
-              title="Водитель-дальнобойщик категории CE"
-              company="TransLogistics GmbH"
-              location="Германия, Мюнхен"
-              salary="€2,500 - €3,000"
-              tags={['Жилье предоставляется', 'Официальное трудоустройство']}
-              postedAt="2 часа назад"
-              isPremium={true}
-            />
-            <JobCard 
-              id="2"
-              title="Строитель-универсал (внутренняя отделка)"
-              company="BuildEuro Sp. z o.o."
-              location="Польша, Варшава"
-              salary="от €1,800"
-              tags={['Без знания языка', 'Оплата каждую неделю']}
-              postedAt="5 часов назад"
-            />
-            <JobCard 
-              id="3"
-              title="Сварщик MIG/MAG"
-              company="MetalWorks s.r.o."
-              location="Чехия, Прага"
-              salary="€2,000 - €2,400"
-              tags={['Бесплатное проживание', 'Спецодежда']}
-              postedAt="1 день назад"
-            />
-            <JobCard 
-              id="4"
-              title="Монтажник солнечных панелей"
-              company="EcoEnergy B.V."
-              location="Нидерланды, Амстердам"
-              salary="€2,200 - €2,800"
-              tags={['Обучение', 'Транспорт до работы']}
-              postedAt="1 день назад"
-            />
+            {error && (
+              <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+                Ошибка при загрузке вакансий.
+              </div>
+            )}
+            
+            {!error && jobs && jobs.length === 0 && (
+              <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+                Актуальных вакансий пока нет.
+              </div>
+            )}
+
+            {!error && jobs && jobs.map((job) => (
+              <JobCard 
+                key={job.id}
+                id={job.id}
+                title={job.title}
+                company={job.company_name || 'Прямой работодатель'}
+                location={job.location}
+                salary={job.salary}
+                tags={job.benefits || []}
+                postedAt={new Date(job.created_at).toLocaleDateString('ru-RU', {
+                  day: 'numeric',
+                  month: 'short'
+                })}
+              />
+            ))}
           </div>
         </div>
       </main>

@@ -1,43 +1,75 @@
 'use client';
 
 import JobCard from '@/components/jobs/JobCard';
-import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Trash2, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
 
 export default function SavedJobsPage() {
-  const [savedJobs, setSavedJobs] = useState([
-    {
-      id: "1",
-      title: "Водитель-дальнобойщик категории CE",
-      company: "TransLogistics GmbH",
-      location: "Германия, Мюнхен",
-      salary: "€2,500 - €3,000",
-      tags: ['Жилье предоставляется', 'Официальное трудоустройство'],
-      postedAt: "2 часа назад",
-      isPremium: true
-    },
-    {
-      id: "3",
-      title: "Сварщик MIG/MAG",
-      company: "MetalWorks s.r.o.",
-      location: "Чехия, Прага",
-      salary: "€2,000 - €2,400",
-      tags: ['Бесплатное проживание', 'Спецодежда'],
-      postedAt: "1 день назад"
-    },
-    {
-      id: "4",
-      title: "Монтажник солнечных панелей",
-      company: "EcoEnergy B.V.",
-      location: "Нидерланды, Амстердам",
-      salary: "€2,200 - €2,800",
-      tags: ['Обучение', 'Транспорт до работы'],
-      postedAt: "1 день назад"
-    }
-  ]);
+  const supabase = createClient();
+  const [savedJobs, setSavedJobs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const removeJob = (id: string) => {
-    setSavedJobs(savedJobs.filter(job => job.id !== id));
+  useEffect(() => {
+    fetchSavedJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchSavedJobs() {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Необходима авторизация');
+      }
+
+      const { data, error } = await supabase
+        .from('saved_jobs')
+        .select(`
+          id,
+          job_id,
+          jobs (*)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const formattedJobs = data?.map((item: any) => ({
+        saved_id: item.id,
+        ...item.jobs,
+        postedAt: item.jobs?.created_at ? new Date(item.jobs.created_at).toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'short'
+        }) : ''
+      })) || [];
+
+      setSavedJobs(formattedJobs);
+    } catch (err: any) {
+      console.error('Error fetching saved jobs:', err);
+      setError('Не удалось загрузить сохраненные вакансии.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const removeJob = async (savedId: string) => {
+    try {
+      const { error } = await supabase
+        .from('saved_jobs')
+        .delete()
+        .eq('id', savedId);
+
+      if (error) throw error;
+      
+      setSavedJobs(savedJobs.filter(job => job.saved_id !== savedId));
+    } catch (err) {
+      console.error('Error removing saved job:', err);
+      alert('Ошибка при удалении из сохраненных');
+    }
   };
 
   return (
@@ -49,18 +81,36 @@ export default function SavedJobsPage() {
         </div>
       </div>
 
-      {savedJobs.length === 0 ? (
+      {error && (
+        <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      ) : savedJobs.length === 0 ? (
         <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
           <p className="text-slate-500 mb-4">У вас нет сохраненных вакансий.</p>
-          <a href="/jobs" className="text-blue-600 hover:text-blue-800 font-medium">Перейти к поиску вакансий</a>
+          <Link href="/" className="text-blue-600 hover:text-blue-800 font-medium">Перейти к поиску вакансий</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {savedJobs.map((job) => (
-            <div key={job.id} className="relative group">
-              <JobCard {...job} />
+            <div key={job.saved_id} className="relative group">
+              <JobCard 
+                id={job.id}
+                title={job.title}
+                company={job.company_name || 'Прямой работодатель'}
+                location={job.location}
+                salary={job.salary}
+                tags={job.benefits || []}
+                postedAt={job.postedAt}
+              />
               <button 
-                onClick={() => removeJob(job.id)}
+                onClick={() => removeJob(job.saved_id)}
                 className="absolute top-4 right-4 p-2 bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
                 title="Удалить из сохраненных"
               >

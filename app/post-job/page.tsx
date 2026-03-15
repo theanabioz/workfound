@@ -1,46 +1,11 @@
 'use client';
 
 import Header from '@/components/layout/Header';
-import { Briefcase, MapPin, Euro, FileText, CheckCircle2, Save } from 'lucide-react';
+import { Briefcase, MapPin, Euro, FileText, CheckCircle2, Save, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
-
-// Mock data to simulate fetching a job by ID
-const MOCK_JOBS: Record<string, any> = {
-  '1': {
-    title: 'Водитель-дальнобойщик категории CE',
-    category: 'Транспорт и логистика',
-    location: 'Варшава, Польша',
-    salary: '2500 - 3000',
-    description: 'Требуется опытный водитель категории CE для международных перевозок по Европе. Опыт работы от 2 лет. Наличие чип-карты и кода 95 обязательно. Автопарк: Mercedes Actros, Volvo FH (Евро 6).',
-    benefits: ['Жилье предоставляется', 'Официальное трудоустройство', 'Медицинская страховка']
-  },
-  '2': {
-    title: 'Сварщик MIG/MAG',
-    category: 'Производство',
-    location: 'Гданьск, Польша',
-    salary: '1800 - 2200',
-    description: 'Ищем сварщиков MIG/MAG на судостроительный завод. Работа в цеху. Предоставляем рабочую одежду и инструмент. Требуется сертификат и опыт работы от 1 года.',
-    benefits: ['Жилье предоставляется', 'Официальное трудоустройство']
-  },
-  '3': {
-    title: 'Монтажник строительных лесов',
-    category: 'Строительство',
-    location: 'Берлин, Германия',
-    salary: '2000 - 2500',
-    description: 'Монтаж и демонтаж строительных лесов на объектах. Работа в бригаде. Знание техники безопасности.',
-    benefits: ['Жилье предоставляется', 'Транспорт до работы']
-  },
-  '4': {
-    title: 'Разнорабочий на склад',
-    category: 'Склад и логистика',
-    location: 'Прага, Чехия',
-    salary: '1200 - 1500',
-    description: 'Комплектация заказов, упаковка товаров, работа со сканером. Опыт не требуется, обучаем на месте.',
-    benefits: ['Официальное трудоустройство', 'Бесплатное питание', 'Обучение']
-  }
-};
+import { createClient } from '@/utils/supabase/client';
 
 const AVAILABLE_BENEFITS = [
   'Жилье предоставляется', 
@@ -55,6 +20,12 @@ function PostJobForm() {
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
   const isEditing = !!editId;
+  const router = useRouter();
+  const supabase = createClient();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(isEditing);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -66,10 +37,37 @@ function PostJobForm() {
   });
 
   useEffect(() => {
-    if (isEditing && editId && MOCK_JOBS[editId]) {
-      setFormData(MOCK_JOBS[editId]);
+    async function fetchJob() {
+      if (!isEditing || !editId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('id', editId)
+          .single();
+          
+        if (error) throw error;
+        if (data) {
+          setFormData({
+            title: data.title || '',
+            category: data.category || '',
+            location: data.location || '',
+            salary: data.salary || '',
+            description: data.description || '',
+            benefits: data.benefits || []
+          });
+        }
+      } catch (err: any) {
+        console.error('Error fetching job:', err);
+        setError('Не удалось загрузить данные вакансии.');
+      } finally {
+        setIsFetching(false);
+      }
     }
-  }, [isEditing, editId]);
+
+    fetchJob();
+  }, [isEditing, editId, supabase]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -87,6 +85,59 @@ function PostJobForm() {
     });
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Вы должны быть авторизованы для публикации вакансии.');
+      }
+
+      const jobData = {
+        employer_id: user.id,
+        title: formData.title,
+        category: formData.category,
+        location: formData.location,
+        salary: formData.salary,
+        description: formData.description,
+        benefits: formData.benefits,
+        status: 'active'
+      };
+
+      if (isEditing && editId) {
+        const { error: updateError } = await supabase
+          .from('jobs')
+          .update(jobData)
+          .eq('id', editId)
+          .eq('employer_id', user.id); // Security check
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('jobs')
+          .insert([jobData]);
+
+        if (insertError) throw insertError;
+      }
+
+      router.push('/dashboard/employer/jobs');
+      router.refresh();
+    } catch (err: any) {
+      console.error('Error saving job:', err);
+      setError(err.message || 'Произошла ошибка при сохранении вакансии.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isFetching) {
+    return <div className="max-w-3xl mx-auto px-4 py-12 text-center text-slate-500">Загрузка данных вакансии...</div>;
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
@@ -101,7 +152,13 @@ function PostJobForm() {
         </p>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 sm:p-8 space-y-6">
           
           {/* Title & Category */}
@@ -111,6 +168,7 @@ function PostJobForm() {
               <input 
                 type="text" 
                 name="title"
+                required
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Например: Водитель-дальнобойщик CE" 
@@ -123,6 +181,7 @@ function PostJobForm() {
                 <Briefcase className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <select 
                   name="category"
+                  required
                   value={formData.category}
                   onChange={handleChange}
                   className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors appearance-none text-sm text-slate-900"
@@ -148,6 +207,7 @@ function PostJobForm() {
                 <input 
                   type="text" 
                   name="location"
+                  required
                   value={formData.location}
                   onChange={handleChange}
                   placeholder="Город, Страна" 
@@ -179,6 +239,7 @@ function PostJobForm() {
               <label className="block text-sm font-semibold text-slate-900 mb-1.5">Описание вакансии <span className="text-red-500">*</span></label>
               <textarea 
                 name="description"
+                required
                 value={formData.description}
                 onChange={handleChange}
                 rows={6} 
@@ -214,21 +275,22 @@ function PostJobForm() {
               ? 'Изменения будут применены сразу после сохранения.' 
               : 'Публикуя вакансию, вы соглашаетесь с правилами сервиса.'}
           </p>
-          <button className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2">
-            {isEditing ? (
-              <>
-                <Save className="w-4 h-4" />
-                Сохранить изменения
-              </>
+          <button 
+            type="submit"
+            disabled={isLoading}
+            className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 disabled:bg-slate-700 text-white px-6 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isEditing ? (
+              <Save className="w-4 h-4" />
             ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                Опубликовать
-              </>
+              <CheckCircle2 className="w-4 h-4" />
             )}
+            {isLoading ? 'Сохранение...' : isEditing ? 'Сохранить изменения' : 'Опубликовать'}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

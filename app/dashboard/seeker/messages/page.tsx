@@ -1,38 +1,96 @@
 'use client';
 
-import { Search, Send, Paperclip, MoreVertical, CheckCircle2 } from 'lucide-react';
+import { Search, Send, Paperclip, MoreVertical, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export default function MessagesPage() {
-  const [activeChat, setActiveChat] = useState(1);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
 
-  const [chats, setChats] = useState([
-    {
-      id: 1,
-      company: 'BuildEuro Sp. z o.o.',
-      initial: 'B',
-      status: 'В сети',
-      lastSeen: '10:42',
-      messages: [
-        { id: 1, sender: 'them', text: 'Здравствуйте, Алексей!\n\nМы рассмотрели ваше резюме на вакансию "Строитель-универсал". Ваш опыт нам подходит. Готовы ли вы пройти небольшое собеседование по видеосвязи завтра в 14:00 по Варшаве?', time: '10:42' },
-        { id: 2, sender: 'me', text: 'Добрый день! Да, конечно. Завтра в 14:00 мне удобно. В каком приложении будет звонок?', time: '10:45' }
-      ]
-    },
-    {
-      id: 2,
-      company: 'TransLogistics GmbH',
-      initial: 'T',
-      status: 'Был(а) недавно',
-      lastSeen: 'Вчера',
-      messages: [
-        { id: 1, sender: 'them', text: 'Ваше резюме получено. Мы свяжемся с вами в ближайшее время.', time: 'Вчера, 15:30' }
-      ]
+  const [chats, setChats] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchChats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchChats() {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Необходима авторизация');
+      }
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          employer:employer_id (
+            id,
+            company_name
+          )
+        `)
+        .eq('seeker_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        setChats([]);
+      } else if (data) {
+        // Group messages by employer_id
+        const groupedChats: Record<string, any> = {};
+        
+        data.forEach((msg: any) => {
+          const employerId = msg.employer_id;
+          if (!groupedChats[employerId]) {
+            groupedChats[employerId] = {
+              id: employerId,
+              employer_id: employerId,
+              company: msg.employer?.company_name || 'Работодатель',
+              initial: (msg.employer?.company_name || 'Р').charAt(0).toUpperCase(),
+              status: 'В сети', // Mock status
+              lastSeen: 'Недавно',
+              messages: []
+            };
+          }
+          
+          const messageTime = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          
+          groupedChats[employerId].messages.push({
+            id: msg.id,
+            sender: msg.is_sender_employer ? 'them' : 'me',
+            text: msg.text,
+            time: messageTime
+          });
+        });
+
+        const chatsArray = Object.values(groupedChats).sort((a: any, b: any) => {
+          const lastMsgA = a.messages[a.messages.length - 1];
+          const lastMsgB = b.messages[b.messages.length - 1];
+          // Simple sort, assuming messages are already ordered by time
+          return 0; 
+        });
+
+        setChats(chatsArray);
+      } else {
+        setChats([]);
+      }
+    } catch (err: any) {
+      console.error('Error in fetchChats:', err);
+      setError('Не удалось загрузить сообщения.');
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  }
 
-  const activeChatData = chats.find(c => c.id === activeChat);
+  const activeChatData = chats.find(c => c.id === activeChatId);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,26 +100,32 @@ export default function MessagesPage() {
     scrollToBottom();
   }, [activeChatData?.messages]);
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !activeChatData) return;
 
-    const now = new Date();
-    const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    setChats(chats.map(chat => {
-      if (chat.id === activeChat) {
-        return {
-          ...chat,
-          messages: [
-            ...chat.messages,
-            { id: Date.now(), sender: 'me', text: newMessage.trim(), time: timeString }
-          ]
-        };
-      }
-      return chat;
-    }));
+      const messageObj = {
+        employer_id: activeChatData.employer_id,
+        seeker_id: user.id,
+        text: newMessage,
+        is_sender_employer: false
+      };
 
-    setNewMessage('');
+      const { error } = await supabase
+        .from('messages')
+        .insert([messageObj]);
+
+      if (error) throw error;
+      
+      fetchChats();
+      setNewMessage('');
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('Ошибка при отправке сообщения');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -93,34 +157,44 @@ export default function MessagesPage() {
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            {chats.map(chat => {
-              const lastMessage = chat.messages[chat.messages.length - 1];
-              const isActive = activeChat === chat.id;
-              
-              return (
-                <div 
-                  key={chat.id}
-                  onClick={() => setActiveChat(chat.id)}
-                  className={`p-4 border-b border-slate-200 cursor-pointer relative transition-colors ${isActive ? 'bg-slate-100' : 'bg-white hover:bg-slate-50'}`}
-                >
-                  {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-900"></div>}
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 border border-slate-200 rounded-md flex items-center justify-center font-bold text-sm shrink-0 ${isActive ? 'bg-white text-slate-700' : 'bg-slate-50 text-slate-500'}`}>
-                      {chat.initial}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-baseline mb-0.5">
-                        <h3 className={`text-sm truncate ${isActive ? 'font-bold text-slate-900' : 'font-medium text-slate-900'}`}>{chat.company}</h3>
-                        <span className={`text-[10px] font-medium ${isActive ? 'text-slate-500' : 'text-slate-400'}`}>{chat.lastSeen}</span>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+              </div>
+            ) : chats.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-sm">
+                У вас пока нет сообщений.
+              </div>
+            ) : (
+              chats.map(chat => {
+                const lastMessage = chat.messages?.[chat.messages.length - 1];
+                const isActive = activeChatId === chat.id;
+                
+                return (
+                  <div 
+                    key={chat.id}
+                    onClick={() => setActiveChatId(chat.id)}
+                    className={`p-4 border-b border-slate-200 cursor-pointer relative transition-colors ${isActive ? 'bg-slate-100' : 'bg-white hover:bg-slate-50'}`}
+                  >
+                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-900"></div>}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 border border-slate-200 rounded-md flex items-center justify-center font-bold text-sm shrink-0 ${isActive ? 'bg-white text-slate-700' : 'bg-slate-50 text-slate-500'}`}>
+                        {chat.initial || '?'}
                       </div>
-                      <p className={`text-xs truncate ${isActive ? 'text-slate-600' : 'text-slate-500'}`}>
-                        {lastMessage.text}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline mb-0.5">
+                          <h3 className={`text-sm truncate ${isActive ? 'font-bold text-slate-900' : 'font-medium text-slate-900'}`}>{chat.company}</h3>
+                          <span className={`text-[10px] font-medium ${isActive ? 'text-slate-500' : 'text-slate-400'}`}>{chat.lastSeen}</span>
+                        </div>
+                        <p className={`text-xs truncate ${isActive ? 'text-slate-600' : 'text-slate-500'}`}>
+                          {lastMessage?.text || chat.lastMessage}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -131,7 +205,7 @@ export default function MessagesPage() {
             <div className="h-16 border-b border-slate-200 px-6 flex items-center justify-between bg-white">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-slate-100 border border-slate-200 text-slate-700 rounded-md flex items-center justify-center font-bold text-sm">
-                  {activeChatData.initial}
+                  {activeChatData.initial || '?'}
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">{activeChatData.company}</h2>
@@ -152,10 +226,10 @@ export default function MessagesPage() {
                 <span className="text-[10px] font-medium text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded shadow-sm">Сегодня</span>
               </div>
 
-              {activeChatData.messages.map((msg) => (
+              {activeChatData.messages?.map((msg: any) => (
                 <div key={msg.id} className={`flex gap-3 max-w-2xl ${msg.sender === 'me' ? 'ml-auto flex-row-reverse' : ''}`}>
                   <div className={`w-8 h-8 rounded-md flex items-center justify-center font-bold text-sm shrink-0 mt-1 ${msg.sender === 'me' ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-700'}`}>
-                    {msg.sender === 'me' ? 'А' : activeChatData.initial}
+                    {msg.sender === 'me' ? 'А' : activeChatData.initial || '?'}
                   </div>
                   <div className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : ''}`}>
                     <div className={`p-3 rounded-lg shadow-sm text-sm whitespace-pre-wrap ${msg.sender === 'me' ? 'bg-slate-900 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}>

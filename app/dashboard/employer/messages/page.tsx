@@ -1,39 +1,94 @@
 'use client';
 
-import { Search, Send, Paperclip, MoreVertical, CheckCircle2 } from 'lucide-react';
+import { Search, Send, Paperclip, MoreVertical, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 export default function EmployerMessagesPage() {
-  const [activeChatId, setActiveChatId] = useState<number>(1);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
 
-  const [chats, setChats] = useState([
-    {
-      id: 1,
-      name: 'Алексей Смирнов',
-      job: 'Водитель-дальнобойщик категории CE',
-      lastMessage: 'Добрый день! Да, конечно...',
-      time: '10:45',
-      unread: 0,
-      messages: [
-        { id: 1, text: 'Здравствуйте, Алексей!\n\nМы рассмотрели ваше резюме на вакансию "Водитель-дальнобойщик". Ваш опыт нам подходит. Готовы ли вы пройти небольшое собеседование по видеосвязи завтра в 14:00 по Варшаве?', time: '10:42', isSender: true },
-        { id: 2, text: 'Добрый день! Да, конечно. Завтра в 14:00 мне удобно. В каком приложении будет звонок?', time: '10:45', isSender: false },
-      ]
-    },
-    {
-      id: 2,
-      name: 'Иван Петров',
-      job: 'Сварщик MIG/MAG',
-      lastMessage: 'Спасибо за обратную связь.',
-      time: 'Вчера',
-      unread: 0,
-      messages: [
-        { id: 1, text: 'Иван, к сожалению, на данный момент мы выбрали другого кандидата. Спасибо за интерес к нашей компании.', time: 'Вчера, 15:30', isSender: true },
-        { id: 2, text: 'Спасибо за обратную связь.', time: 'Вчера, 16:00', isSender: false },
-      ]
+  const [chats, setChats] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchChats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchChats() {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Необходима авторизация');
+      }
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          seeker:seeker_id (
+            id,
+            first_name,
+            last_name
+          )
+        `)
+        .eq('employer_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        setChats([]);
+      } else if (data) {
+        // Group messages by seeker_id
+        const groupedChats: Record<string, any> = {};
+        
+        data.forEach((msg: any) => {
+          const seekerId = msg.seeker_id;
+          const seekerName = msg.seeker ? `${msg.seeker.first_name} ${msg.seeker.last_name}` : 'Соискатель';
+          
+          if (!groupedChats[seekerId]) {
+            groupedChats[seekerId] = {
+              id: seekerId,
+              seeker_id: seekerId,
+              company: seekerName,
+              initial: seekerName.charAt(0).toUpperCase(),
+              status: 'В сети', // Mock status
+              lastSeen: 'Недавно',
+              messages: []
+            };
+          }
+          
+          const messageTime = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          
+          groupedChats[seekerId].messages.push({
+            id: msg.id,
+            sender: msg.is_sender_employer ? 'me' : 'them',
+            text: msg.text,
+            time: messageTime
+          });
+        });
+
+        const chatsArray = Object.values(groupedChats).sort((a: any, b: any) => {
+          return 0; 
+        });
+
+        setChats(chatsArray);
+      } else {
+        setChats([]);
+      }
+    } catch (err: any) {
+      console.error('Error in fetchChats:', err);
+      setError('Не удалось загрузить сообщения.');
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  }
 
   const activeChat = chats.find(chat => chat.id === activeChatId);
 
@@ -45,29 +100,33 @@ export default function EmployerMessagesPage() {
     scrollToBottom();
   }, [activeChat?.messages]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeChat) return;
 
-    const newMessage = {
-      id: Date.now(),
-      text: messageInput,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isSender: true
-    };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    setChats(chats.map(chat => {
-      if (chat.id === activeChatId) {
-        return {
-          ...chat,
-          lastMessage: messageInput,
-          time: newMessage.time,
-          messages: [...chat.messages, newMessage]
-        };
-      }
-      return chat;
-    }));
+      const newMessage = {
+        employer_id: user.id,
+        seeker_id: activeChat.seeker_id,
+        text: messageInput,
+        is_sender_employer: true
+      };
 
-    setMessageInput('');
+      const { error } = await supabase
+        .from('messages')
+        .insert([newMessage]);
+
+      if (error) throw error;
+      
+      // Optimistic update or refetch
+      fetchChats();
+      setMessageInput('');
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('Ошибка при отправке сообщения');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -99,33 +158,43 @@ export default function EmployerMessagesPage() {
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            {chats.map((chat) => (
-              <div 
-                key={chat.id}
-                onClick={() => setActiveChatId(chat.id)}
-                className={`p-4 border-b border-slate-200 cursor-pointer transition-colors relative ${activeChatId === chat.id ? 'bg-slate-100' : 'bg-white hover:bg-slate-50'}`}
-              >
-                {activeChatId === chat.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-900"></div>}
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 border text-slate-700 rounded-md flex items-center justify-center font-bold text-sm shrink-0 ${activeChatId === chat.id ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-                    {chat.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline mb-0.5">
-                      <h3 className={`text-sm truncate ${activeChatId === chat.id ? 'font-bold text-slate-900' : 'font-medium text-slate-900'}`}>
-                        {chat.name}
-                      </h3>
-                      <span className={`text-[10px] font-medium ${activeChatId === chat.id ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {chat.time}
-                      </span>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+              </div>
+            ) : chats.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-sm">
+                У вас пока нет сообщений.
+              </div>
+            ) : (
+              chats.map((chat) => (
+                <div 
+                  key={chat.id}
+                  onClick={() => setActiveChatId(chat.id)}
+                  className={`p-4 border-b border-slate-200 cursor-pointer transition-colors relative ${activeChatId === chat.id ? 'bg-slate-100' : 'bg-white hover:bg-slate-50'}`}
+                >
+                  {activeChatId === chat.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-slate-900"></div>}
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 border text-slate-700 rounded-md flex items-center justify-center font-bold text-sm shrink-0 ${activeChatId === chat.id ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                      {chat.name?.charAt(0) || '?'}
                     </div>
-                    <p className={`text-xs truncate ${activeChatId === chat.id ? 'text-slate-600' : 'text-slate-500'}`}>
-                      {chat.lastMessage}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline mb-0.5">
+                        <h3 className={`text-sm truncate ${activeChatId === chat.id ? 'font-bold text-slate-900' : 'font-medium text-slate-900'}`}>
+                          {chat.name}
+                        </h3>
+                        <span className={`text-[10px] font-medium ${activeChatId === chat.id ? 'text-slate-500' : 'text-slate-400'}`}>
+                          {chat.time}
+                        </span>
+                      </div>
+                      <p className={`text-xs truncate ${activeChatId === chat.id ? 'text-slate-600' : 'text-slate-500'}`}>
+                        {chat.lastMessage}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -137,7 +206,7 @@ export default function EmployerMessagesPage() {
               <div className="h-16 border-b border-slate-200 px-6 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-slate-100 border border-slate-200 text-slate-700 rounded-md flex items-center justify-center font-bold text-sm">
-                    {activeChat.name.charAt(0)}
+                    {activeChat.name?.charAt(0) || '?'}
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-slate-900">{activeChat.name}</h2>
@@ -155,10 +224,10 @@ export default function EmployerMessagesPage() {
                   <span className="text-[10px] font-medium text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded shadow-sm">Сегодня</span>
                 </div>
 
-                {activeChat.messages.map((message) => (
+                {activeChat.messages?.map((message: any) => (
                   <div key={message.id} className={`flex gap-3 max-w-2xl ${message.isSender ? 'ml-auto flex-row-reverse' : ''}`}>
                     <div className={`w-8 h-8 rounded-md flex items-center justify-center font-bold text-sm shrink-0 mt-1 ${message.isSender ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-700'}`}>
-                      {message.isSender ? 'T' : activeChat.name.charAt(0)}
+                      {message.isSender ? 'T' : activeChat.name?.charAt(0) || '?'}
                     </div>
                     <div className={`flex flex-col ${message.isSender ? 'items-end' : 'items-start'}`}>
                       <div className={`p-3 rounded-lg shadow-sm text-sm whitespace-pre-wrap ${message.isSender ? 'bg-slate-900 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}>

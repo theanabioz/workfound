@@ -1,50 +1,75 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, MoreHorizontal, ExternalLink, Edit, Eye, EyeOff, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, MoreHorizontal, ExternalLink, Edit, Eye, EyeOff, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
 
 export default function EmployerJobsPage() {
   const router = useRouter();
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const [jobToDelete, setJobToDelete] = useState<number | null>(null);
+  const supabase = createClient();
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [jobs, setJobs] = useState([
-    {
-      id: 1,
-      title: 'Водитель-дальнобойщик категории CE',
-      status: 'active',
-      views: 145,
-      applications: 12,
-      postedAt: '10 Мар 2026',
-    },
-    {
-      id: 2,
-      title: 'Сварщик MIG/MAG',
-      status: 'active',
-      views: 89,
-      applications: 5,
-      postedAt: '08 Мар 2026',
-    },
-    {
-      id: 3,
-      title: 'Монтажник строительных лесов',
-      status: 'draft',
-      views: 0,
-      applications: 0,
-      postedAt: 'Черновик',
-    },
-    {
-      id: 4,
-      title: 'Разнорабочий на склад',
-      status: 'closed',
-      views: 320,
-      applications: 45,
-      postedAt: '01 Фев 2026',
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchJobs() {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Необходима авторизация');
+      }
+
+      const { data: jobsData, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('employer_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (jobsError) throw jobsError;
+      
+      // Fetch application counts for these jobs
+      const { data: applicationsData, error: applicationsError } = await supabase
+        .from('applications')
+        .select('job_id');
+        
+      if (applicationsError) throw applicationsError;
+      
+      const applicationCounts = applicationsData.reduce((acc: Record<string, number>, app) => {
+        acc[app.job_id] = (acc[app.job_id] || 0) + 1;
+        return acc;
+      }, {});
+
+      const formattedJobs = jobsData?.map(job => ({
+        ...job,
+        views: job.views || 0,
+        applications: applicationCounts[job.id] || 0,
+        postedAt: new Date(job.created_at).toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        })
+      })) || [];
+
+      setJobs(formattedJobs);
+    } catch (err: any) {
+      console.error('Error fetching jobs:', err);
+      setError('Не удалось загрузить вакансии.');
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -56,29 +81,53 @@ export default function EmployerJobsPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleDropdown = (id: number) => {
+  const toggleDropdown = (id: string) => {
     setOpenDropdownId(openDropdownId === id ? null : id);
   };
 
-  const handleActivate = (id: number) => {
-    setJobs(jobs.map(job => job.id === id ? { ...job, status: 'active' } : job));
-    setOpenDropdownId(null);
+  const updateJobStatus = async (id: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setJobs(jobs.map(job => job.id === id ? { ...job, status: newStatus } : job));
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Ошибка при обновлении статуса');
+    } finally {
+      setOpenDropdownId(null);
+    }
   };
 
-  const handleDeactivate = (id: number) => {
-    setJobs(jobs.map(job => job.id === id ? { ...job, status: 'closed' } : job));
-    setOpenDropdownId(null);
-  };
+  const handleActivate = (id: string) => updateJobStatus(id, 'active');
+  const handleDeactivate = (id: string) => updateJobStatus(id, 'closed');
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string) => {
     setOpenDropdownId(null);
     router.push(`/post-job?edit=${id}`);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (jobToDelete !== null) {
-      setJobs(jobs.filter(job => job.id !== jobToDelete));
-      setJobToDelete(null);
+      try {
+        const { error } = await supabase
+          .from('jobs')
+          .delete()
+          .eq('id', jobToDelete);
+
+        if (error) throw error;
+        
+        setJobs(jobs.filter(job => job.id !== jobToDelete));
+      } catch (err) {
+        console.error('Error deleting job:', err);
+        alert('Ошибка при удалении вакансии');
+      } finally {
+        setJobToDelete(null);
+      }
     }
   };
 
@@ -95,6 +144,12 @@ export default function EmployerJobsPage() {
         </Link>
       </div>
 
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto min-h-[300px]">
           <table className="w-full text-sm text-left">
@@ -109,7 +164,14 @@ export default function EmployerJobsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {jobs.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-400" />
+                    Загрузка вакансий...
+                  </td>
+                </tr>
+              ) : jobs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-slate-500">
                     У вас пока нет размещенных вакансий.
