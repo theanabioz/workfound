@@ -99,7 +99,7 @@ export default function EmployerDashboard() {
                   <td className="px-5 py-3 text-slate-600">{app.job}</td>
                   <td className="px-5 py-3 text-slate-500 font-mono text-xs">{app.date}</td>
                   <td className="px-5 py-3">
-                    <span className={`px-2.5 py-1 rounded-md text-[11px] font-medium border ${app.statusColor}`}>
+                    <span className={`px-2.5 py-1 rounded-md text-[11px] font-medium border whitespace-nowrap ${app.statusColor}`}>
                       {app.status}
                     </span>
                   </td>
