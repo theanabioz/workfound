@@ -1,117 +1,118 @@
-import { FileText, Send, Bookmark, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { FileText, Send, Bookmark, ChevronRight, CheckCircle2, AlertCircle, MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SeekerDashboard() {
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Обзор</h1>
-          <p className="text-slate-500 mt-1 font-medium">Добро пожаловать, Алексей Смирнов</p>
+          <h1 className="text-2xl font-semibold text-slate-900">Личный кабинет</h1>
+          <p className="text-sm text-slate-500 mt-1">Алексей Смирнов • ID: 84729</p>
         </div>
-        <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 text-center">
-          Найти работу
+        <Link href="/" className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm">
+          Поиск вакансий
         </Link>
       </div>
 
-      {/* Profile Completion */}
-      <div className="bg-white p-8 rounded-3xl border border-slate-200/75 shadow-sm flex flex-col md:flex-row items-center gap-8">
-        <div className="w-24 h-24 shrink-0 relative">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-            <path
-              className="text-slate-100"
-              strokeWidth="3"
-              stroke="currentColor"
-              fill="none"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-            <path
-              className="text-emerald-500"
-              strokeDasharray="80, 100"
-              strokeWidth="3"
-              strokeLinecap="round"
-              stroke="currentColor"
-              fill="none"
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center font-extrabold text-slate-900 text-xl">
-            80%
+      {/* Profile Alert */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-semibold text-blue-900">Профиль заполнен на 80%</h3>
+            <p className="text-xs text-blue-700 mt-1">Добавьте информацию о знании языков для повышения видимости резюме.</p>
           </div>
         </div>
-        <div className="flex-1 text-center md:text-left">
-          <h3 className="text-xl font-bold text-slate-900 mb-2">Профиль заполнен на 80%</h3>
-          <p className="text-slate-600 mb-5 text-lg">Добавьте информацию о знании языков, чтобы получать больше приглашений от работодателей.</p>
-          <Link href="/dashboard/seeker/resume" className="text-blue-600 font-semibold hover:underline bg-blue-50 px-4 py-2 rounded-lg inline-block">
-            Дополнить резюме
-          </Link>
-        </div>
+        <Link href="/dashboard/seeker/resume" className="shrink-0 bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors">
+          Обновить резюме
+        </Link>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/75 shadow-sm">
-          <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
-              <Send className="w-7 h-7 text-blue-600" />
-            </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-start">
             <div>
-              <div className="text-3xl font-extrabold text-slate-900">5</div>
-              <div className="text-sm text-slate-500 font-semibold mt-0.5">Моих откликов</div>
+              <p className="text-sm font-medium text-slate-500">Мои отклики</p>
+              <h3 className="text-2xl font-semibold text-slate-900 mt-1 font-mono tracking-tight">5</h3>
+            </div>
+            <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
+              <Send className="w-4 h-4 text-slate-500" />
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/75 shadow-sm">
-          <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-7 h-7 text-emerald-600" />
-            </div>
+        
+        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-start">
             <div>
-              <div className="text-3xl font-extrabold text-slate-900">1</div>
-              <div className="text-sm text-slate-500 font-semibold mt-0.5">Приглашение</div>
+              <p className="text-sm font-medium text-slate-500">Приглашения</p>
+              <h3 className="text-2xl font-semibold text-slate-900 mt-1 font-mono tracking-tight">1</h3>
+            </div>
+            <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
+              <CheckCircle2 className="w-4 h-4 text-slate-500" />
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/75 shadow-sm">
-          <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0">
-              <Bookmark className="w-7 h-7 text-amber-600" />
-            </div>
+
+        <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+          <div className="flex justify-between items-start">
             <div>
-              <div className="text-3xl font-extrabold text-slate-900">3</div>
-              <div className="text-sm text-slate-500 font-semibold mt-0.5">В избранном</div>
+              <p className="text-sm font-medium text-slate-500">Сохраненные</p>
+              <h3 className="text-2xl font-semibold text-slate-900 mt-1 font-mono tracking-tight">3</h3>
+            </div>
+            <div className="p-2 bg-slate-50 rounded-md border border-slate-100">
+              <Bookmark className="w-4 h-4 text-slate-500" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Applications */}
-      <div className="bg-white rounded-3xl border border-slate-200/75 shadow-sm overflow-hidden">
-        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-          <h2 className="font-bold text-slate-900 text-xl tracking-tight">Статус откликов</h2>
-          <Link href="/dashboard/seeker/applications" className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center transition-colors">
-            Все отклики <ChevronRight className="w-4 h-4 ml-1" />
+      {/* Data Table */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+          <h2 className="font-semibold text-slate-800 text-sm">История откликов</h2>
+          <Link href="/dashboard/seeker/applications" className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center">
+            Все отклики <ChevronRight className="w-3 h-3 ml-0.5" />
           </Link>
         </div>
-        <div className="divide-y divide-slate-100">
-          {[
-            { company: 'TransLogistics GmbH', job: 'Водитель-дальнобойщик категории CE', date: 'Сегодня', status: 'Просмотрено', statusColor: 'bg-blue-50 text-blue-700' },
-            { company: 'BuildEuro Sp. z o.o.', job: 'Строитель-универсал', date: 'Вчера', status: 'Приглашение', statusColor: 'bg-emerald-50 text-emerald-700' },
-            { company: 'MetalWorks s.r.o.', job: 'Сварщик MIG/MAG', date: '10 Марта', status: 'Отправлено', statusColor: 'bg-slate-100 text-slate-600' },
-          ].map((app, i) => (
-            <div key={i} className="px-8 py-5 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
-              <div>
-                <div className="font-bold text-slate-900 text-lg">{app.job}</div>
-                <div className="text-sm text-slate-500 font-medium mt-0.5">{app.company}</div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-sm text-slate-400 font-medium hidden sm:block">{app.date}</div>
-                <span className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${app.statusColor}`}>
-                  {app.status}
-                </span>
-              </div>
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-5 py-3 font-medium">Компания</th>
+                <th className="px-5 py-3 font-medium">Вакансия</th>
+                <th className="px-5 py-3 font-medium">Дата</th>
+                <th className="px-5 py-3 font-medium">Статус</th>
+                <th className="px-5 py-3 font-medium text-right">Действия</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {[
+                { company: 'TransLogistics GmbH', job: 'Водитель-дальнобойщик категории CE', date: '15 Мар 2026', status: 'Просмотрено', statusColor: 'bg-blue-100 text-blue-700 border-blue-200' },
+                { company: 'BuildEuro Sp. z o.o.', job: 'Строитель-универсал', date: '14 Мар 2026', status: 'Приглашение', statusColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+                { company: 'MetalWorks s.r.o.', job: 'Сварщик MIG/MAG', date: '10 Мар 2026', status: 'Отправлено', statusColor: 'bg-slate-100 text-slate-700 border-slate-200' },
+              ].map((app, i) => (
+                <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-5 py-3">
+                    <div className="font-medium text-slate-900">{app.company}</div>
+                  </td>
+                  <td className="px-5 py-3 text-slate-600">{app.job}</td>
+                  <td className="px-5 py-3 text-slate-500 font-mono text-xs">{app.date}</td>
+                  <td className="px-5 py-3">
+                    <span className={`px-2.5 py-1 rounded-md text-[11px] font-medium border ${app.statusColor}`}>
+                      {app.status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
