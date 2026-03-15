@@ -1,35 +1,63 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { updateSession } from './utils/supabase/middleware'
 import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
-  // Update session first
-  const response = await updateSession(request)
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+          })
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const cookieOptions = {
+              ...options,
+              sameSite: 'none' as const,
+              secure: true,
+            }
+            supabaseResponse.cookies.set(name, value, cookieOptions)
+          })
+        },
+      },
+    }
+  )
+
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser()
 
   // Check if trying to access protected routes
   if (request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/post-job')) {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            // We don't need to set cookies here, updateSession already did it
-          },
-        },
-      }
-    )
-
-    const { data: { user } } = await supabase.auth.getUser()
-
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      console.log('Middleware: No user found for path', request.nextUrl.pathname, 'Error:', error?.message);
+      console.log('Cookies present:', request.cookies.getAll().map(c => c.name));
+      
+      // Make sure we pass the cookies if we redirect, just in case setAll cleared them
+      const redirectUrl = new URL('/login', request.url);
+      const redirectResponse = NextResponse.redirect(redirectUrl);
+      
+      // Copy cookies from supabaseResponse to redirectResponse
+      supabaseResponse.cookies.getAll().forEach(cookie => {
+        redirectResponse.cookies.set(cookie.name, cookie.value);
+      });
+      
+      return redirectResponse;
     }
 
-    // Optional: Role-based redirect
+    // Role-based redirect
     const role = user.user_metadata?.role || 'seeker'
     if (request.nextUrl.pathname.startsWith('/dashboard/employer') && role !== 'employer') {
       return NextResponse.redirect(new URL('/dashboard/seeker', request.url))
@@ -39,18 +67,11 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return response
+  return supabaseResponse
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

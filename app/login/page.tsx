@@ -10,7 +10,30 @@ function LoginForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState<'seeker' | 'employer'>('seeker');
   const searchParams = useSearchParams();
-  const message = searchParams.get('message');
+  const [message, setMessage] = useState<string | null>(searchParams.get('message'));
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+
+  const handleSubmit = async (formData: FormData) => {
+    setIsPending(true);
+    setMessage(null);
+    setSuccessMessage(null);
+    
+    const action = isLogin ? login : signup;
+    const result = await action(formData);
+    
+    setIsPending(false);
+    
+    if (result?.error) {
+      if (result.error.includes('Регистрация успешна')) {
+        setSuccessMessage(result.error);
+        setIsLogin(true); // Switch to login view
+      } else {
+        setMessage(result.error);
+      }
+    }
+    // If success, the server action will redirect, so we don't need to do anything else here
+  };
 
   return (
     <>
@@ -26,7 +49,11 @@ function LoginForm() {
           {isLogin ? 'Или ' : 'Уже есть аккаунт? '}
           <button 
             type="button"
-            onClick={() => setIsLogin(!isLogin)} 
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setMessage(null);
+              setSuccessMessage(null);
+            }} 
             className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
           >
             {isLogin ? 'создайте новый аккаунт' : 'войдите в систему'}
@@ -41,8 +68,13 @@ function LoginForm() {
               {message}
             </div>
           )}
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm font-medium rounded-xl border border-green-200 text-center">
+              {successMessage}
+            </div>
+          )}
           
-          <form className="space-y-6" action={isLogin ? login : signup}>
+          <form className="space-y-6" action={handleSubmit}>
             {!isLogin && (
               <>
                 {/* Role Selection */}
@@ -92,7 +124,7 @@ function LoginForm() {
                       id="name"
                       name="name"
                       type="text"
-                      required
+                      required={!isLogin}
                       className="block w-full pl-11 pr-3 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-slate-50 text-slate-900 transition-colors outline-none"
                       placeholder={role === 'seeker' ? 'Иван Иванов' : 'ООО Компания'}
                     />
@@ -146,6 +178,7 @@ function LoginForm() {
                   type="password"
                   autoComplete={isLogin ? "current-password" : "new-password"}
                   required
+                  minLength={6}
                   className="block w-full pl-11 pr-3 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-slate-50 text-slate-900 transition-colors outline-none"
                   placeholder="••••••••"
                 />
@@ -154,9 +187,10 @@ function LoginForm() {
 
             <button
               type="submit"
-              className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-md shadow-blue-600/20 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all"
+              disabled={isPending}
+              className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-md shadow-blue-600/20 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all disabled:opacity-70"
             >
-              {isLogin ? 'Войти' : 'Зарегистрироваться'}
+              {isPending ? 'Подождите...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
