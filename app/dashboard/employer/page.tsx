@@ -1,7 +1,40 @@
-import { Briefcase, Users, Eye, Plus, ChevronRight, ArrowUpRight, ArrowDownRight, MoreHorizontal } from 'lucide-react';
+'use client';
+
+import { Briefcase, Users, Eye, Plus, ChevronRight, ArrowUpRight, ArrowDownRight, MoreHorizontal, CheckCircle2, XCircle, Clock, Trash2, Mail } from 'lucide-react';
 import Link from 'next/link';
+import { useState, useRef, useEffect } from 'react';
 
 export default function EmployerDashboard() {
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [applications, setApplications] = useState([
+    { id: 1, name: 'Алексей Смирнов', job: 'Водитель-дальнобойщик категории CE', date: '15 Мар 2026, 10:30', status: 'Новый', statusColor: 'bg-blue-100 text-blue-700 border-blue-200' },
+    { id: 2, name: 'Иван Петров', job: 'Сварщик MIG/MAG', date: '14 Мар 2026, 15:45', status: 'На рассмотрении', statusColor: 'bg-slate-100 text-slate-700 border-slate-200' },
+    { id: 3, name: 'Сергей Иванов', job: 'Водитель-дальнобойщик категории CE', date: '10 Мар 2026, 09:15', status: 'Приглашен', statusColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  ]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleDropdown = (id: number) => {
+    setOpenDropdownId(openDropdownId === id ? null : id);
+  };
+
+  const updateStatus = (id: number, newStatus: string, newColor: string) => {
+    setApplications(apps => apps.map(app => 
+      app.id === id ? { ...app, status: newStatus, statusColor: newColor } : app
+    ));
+    setOpenDropdownId(null);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -87,12 +120,8 @@ export default function EmployerDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {[
-                { name: 'Алексей Смирнов', job: 'Водитель-дальнобойщик категории CE', date: '15 Мар 2026, 10:30', status: 'Новый', statusColor: 'bg-blue-100 text-blue-700 border-blue-200' },
-                { name: 'Иван Петров', job: 'Сварщик MIG/MAG', date: '14 Мар 2026, 15:45', status: 'На рассмотрении', statusColor: 'bg-slate-100 text-slate-700 border-slate-200' },
-                { name: 'Сергей Иванов', job: 'Водитель-дальнобойщик категории CE', date: '10 Мар 2026, 09:15', status: 'Приглашен', statusColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-              ].map((app, i) => (
-                <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
+              {applications.map((app) => (
+                <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-5 py-3">
                     <div className="font-medium text-slate-900">{app.name}</div>
                   </td>
@@ -103,10 +132,61 @@ export default function EmployerDashboard() {
                       {app.status}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right">
-                    <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors">
+                  <td className="px-5 py-3 text-right relative">
+                    <button 
+                      onClick={() => toggleDropdown(app.id)}
+                      className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors"
+                    >
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
+                    
+                    {/* Dropdown Menu */}
+                    {openDropdownId === app.id && (
+                      <div 
+                        ref={dropdownRef}
+                        className="absolute right-8 top-10 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10"
+                      >
+                        <div className="px-3 py-2 text-xs font-medium text-slate-500 uppercase tracking-wider border-b border-slate-100 mb-1">
+                          Изменить статус
+                        </div>
+                        <button 
+                          onClick={() => updateStatus(app.id, 'Новый', 'bg-blue-100 text-blue-700 border-blue-200')}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          Новый
+                        </button>
+                        <button 
+                          onClick={() => updateStatus(app.id, 'На рассмотрении', 'bg-slate-100 text-slate-700 border-slate-200')}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                          <Clock className="w-3 h-3 text-slate-500" />
+                          На рассмотрении
+                        </button>
+                        <button 
+                          onClick={() => updateStatus(app.id, 'Приглашен', 'bg-emerald-100 text-emerald-700 border-emerald-200')}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                          Приглашен
+                        </button>
+                        <button 
+                          onClick={() => updateStatus(app.id, 'Отказ', 'bg-rose-100 text-rose-700 border-rose-200')}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                          <XCircle className="w-3 h-3 text-rose-500" />
+                          Отказ
+                        </button>
+                        <div className="border-t border-slate-100 my-1"></div>
+                        <Link 
+                          href="/dashboard/employer/messages"
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                          <Mail className="w-3 h-3 text-slate-500" />
+                          Написать сообщение
+                        </Link>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

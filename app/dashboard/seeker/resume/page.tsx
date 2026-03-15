@@ -1,12 +1,35 @@
-import { Save, Plus, Trash2, User, MapPin, Phone, Mail, Briefcase, GraduationCap, Languages } from 'lucide-react';
+'use client';
+
+import { Save, Plus, Trash2, User, MapPin, Phone, Mail, Briefcase, GraduationCap, Languages, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function ResumePage() {
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleSave = () => {
+    setIsSaving(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsSaving(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }, 1000);
+  };
+
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl relative">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Мое резюме</h1>
         <p className="text-sm text-slate-500 mt-1">Заполните профиль, чтобы работодатели могли вас найти</p>
       </div>
+
+      {showSuccess && (
+        <div className="absolute top-0 right-0 bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium animate-in fade-in slide-in-from-top-2">
+          <CheckCircle2 className="w-4 h-4" />
+          Изменения сохранены
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 md:p-8 space-y-8">
@@ -127,9 +150,17 @@ export default function ResumePage() {
         </div>
         
         <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
-          <button className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-            <Save className="w-4 h-4" />
-            Сохранить изменения
+          <button 
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            {isSaving ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
           </button>
         </div>
       </div>

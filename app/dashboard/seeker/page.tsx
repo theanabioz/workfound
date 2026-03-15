@@ -1,16 +1,50 @@
-import { FileText, Send, Bookmark, ChevronRight, CheckCircle2, AlertCircle, MoreHorizontal } from 'lucide-react';
+'use client';
+
+import { FileText, Send, Bookmark, ChevronRight, CheckCircle2, AlertCircle, MoreHorizontal, Trash2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { useState, useRef, useEffect } from 'react';
 
 export default function SeekerDashboard() {
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const [appToDelete, setAppToDelete] = useState<number | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [recentApps, setRecentApps] = useState([
+    { id: 1, company: 'TransLogistics GmbH', job: 'Водитель-дальнобойщик категории CE', date: '15 Мар 2026', status: 'Просмотрено', statusColor: 'bg-blue-100 text-blue-700 border-blue-200' },
+    { id: 2, company: 'BuildEuro Sp. z o.o.', job: 'Строитель-универсал', date: '14 Мар 2026', status: 'Приглашение', statusColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    { id: 3, company: 'MetalWorks s.r.o.', job: 'Сварщик MIG/MAG', date: '10 Мар 2026', status: 'Отправлено', statusColor: 'bg-slate-100 text-slate-700 border-slate-200' },
+  ]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleDropdown = (id: number) => {
+    setOpenDropdownId(openDropdownId === id ? null : id);
+  };
+
+  const confirmDelete = () => {
+    if (appToDelete !== null) {
+      setRecentApps(recentApps.filter(app => app.id !== appToDelete));
+      setAppToDelete(null);
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto relative">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Личный кабинет</h1>
           <p className="text-sm text-slate-500 mt-1">Алексей Смирнов • ID: 84729</p>
         </div>
-        <Link href="/" className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm">
+        <Link href="/jobs" className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm">
           Поиск вакансий
         </Link>
       </div>
@@ -76,7 +110,7 @@ export default function SeekerDashboard() {
             Все отклики <ChevronRight className="w-3 h-3 ml-0.5" />
           </Link>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[200px]">
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
               <tr>
@@ -88,33 +122,97 @@ export default function SeekerDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {[
-                { company: 'TransLogistics GmbH', job: 'Водитель-дальнобойщик категории CE', date: '15 Мар 2026', status: 'Просмотрено', statusColor: 'bg-blue-100 text-blue-700 border-blue-200' },
-                { company: 'BuildEuro Sp. z o.o.', job: 'Строитель-универсал', date: '14 Мар 2026', status: 'Приглашение', statusColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-                { company: 'MetalWorks s.r.o.', job: 'Сварщик MIG/MAG', date: '10 Мар 2026', status: 'Отправлено', statusColor: 'bg-slate-100 text-slate-700 border-slate-200' },
-              ].map((app, i) => (
-                <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-5 py-3">
-                    <div className="font-medium text-slate-900">{app.company}</div>
-                  </td>
-                  <td className="px-5 py-3 text-slate-600">{app.job}</td>
-                  <td className="px-5 py-3 text-slate-500 font-mono text-xs">{app.date}</td>
-                  <td className="px-5 py-3">
-                    <span className={`px-2.5 py-1 rounded-md text-[11px] font-medium border ${app.statusColor}`}>
-                      {app.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-right">
-                    <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
+              {recentApps.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-slate-500">
+                    У вас пока нет недавних откликов.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                recentApps.map((app) => (
+                  <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-5 py-3">
+                      <div className="font-medium text-slate-900">{app.company}</div>
+                    </td>
+                    <td className="px-5 py-3 text-slate-600">{app.job}</td>
+                    <td className="px-5 py-3 text-slate-500 font-mono text-xs">{app.date}</td>
+                    <td className="px-5 py-3">
+                      <span className={`px-2.5 py-1 rounded-md text-[11px] font-medium border whitespace-nowrap ${app.statusColor}`}>
+                        {app.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-right relative">
+                      {app.status === 'Приглашение' ? (
+                        <Link href="/dashboard/seeker/messages" className="text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors inline-block">
+                          Чат
+                        </Link>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => toggleDropdown(app.id)}
+                            className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                          
+                          {openDropdownId === app.id && (
+                            <div 
+                              ref={dropdownRef}
+                              className="absolute right-5 top-10 w-max min-w-[12rem] bg-white rounded-md shadow-lg border border-slate-200 z-10 py-1 text-left"
+                            >
+                              <button 
+                                onClick={() => {
+                                  setAppToDelete(app.id);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 whitespace-nowrap"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-400" />
+                                Отозвать отклик
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {appToDelete !== null && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] px-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Отозвать отклик?</h3>
+              <p className="text-sm text-slate-500">
+                Вы уверены, что хотите отозвать свой отклик на эту вакансию? Работодатель больше не сможет просматривать ваше резюме в рамках этой заявки.
+              </p>
+            </div>
+            <div className="bg-slate-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-slate-200">
+              <button 
+                onClick={() => setAppToDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 bg-slate-100 rounded-md transition-colors"
+              >
+                Отмена
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors shadow-sm"
+              >
+                Отозвать
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

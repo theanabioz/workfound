@@ -1,6 +1,22 @@
-import { Save, Building, MapPin, Globe, Mail, Phone, UploadCloud } from 'lucide-react';
+'use client';
+
+import { Save, Building, MapPin, Globe, Mail, Phone, UploadCloud, CheckCircle2, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function EmployerProfilePage() {
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleSave = () => {
+    setIsSaving(true);
+    // Simulate API call
+    setTimeout(() => {
+      setIsSaving(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }, 1000);
+  };
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
@@ -8,7 +24,17 @@ export default function EmployerProfilePage() {
         <p className="text-sm text-slate-500 mt-1">Информация о вашей компании для соискателей</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden relative">
+        {/* Success Toast */}
+        <div 
+          className={`absolute top-4 right-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg shadow-sm flex items-center gap-3 transition-all duration-300 z-50 ${
+            showSuccess ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
+        >
+          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+          <div className="text-sm font-medium">Профиль успешно обновлен</div>
+        </div>
+
         <div className="p-6 md:p-8 space-y-8">
           
           {/* Logo & Cover */}
@@ -96,9 +122,17 @@ export default function EmployerProfilePage() {
         </div>
         
         <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
-          <button className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-            <Save className="w-4 h-4" />
-            Сохранить изменения
+          <button 
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+          >
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
           </button>
         </div>
       </div>
