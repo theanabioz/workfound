@@ -13,6 +13,7 @@ export default function EmployerApplicationsPage() {
   const [applications, setApplications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -82,6 +83,13 @@ export default function EmployerApplicationsPage() {
     }
   };
 
+  const filteredApplications = applications.filter(app => {
+    const searchLower = searchQuery.toLowerCase();
+    const emailMatch = app.contact_email?.toLowerCase().includes(searchLower);
+    const jobMatch = app.vacancies?.title?.toLowerCase().includes(searchLower);
+    return emailMatch || jobMatch;
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -114,6 +122,8 @@ export default function EmployerApplicationsPage() {
           <input 
             type="text" 
             placeholder="Поиск по имени или должности..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-4 py-2.5 bg-zinc-50 text-sm border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors font-medium"
           />
         </div>
@@ -142,14 +152,14 @@ export default function EmployerApplicationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {applications.length === 0 ? (
+              {filteredApplications.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 font-medium">
-                    У вас пока нет откликов.
+                    {searchQuery ? 'Отклики по вашему запросу не найдены.' : 'У вас пока нет откликов.'}
                   </td>
                 </tr>
               ) : (
-                applications.map((app) => (
+                filteredApplications.map((app) => (
                   <tr key={app.id} className="hover:bg-zinc-50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">

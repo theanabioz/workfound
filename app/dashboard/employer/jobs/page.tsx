@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, MoreHorizontal, ExternalLink, Edit, Eye, EyeOff, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Plus, MoreHorizontal, ExternalLink, Edit, Eye, EyeOff, Trash2, AlertTriangle, Loader2, Search, Filter } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
@@ -16,6 +16,7 @@ export default function EmployerJobsPage() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchJobs();
@@ -118,6 +119,18 @@ export default function EmployerJobsPage() {
     router.push(`/post-job?edit=${id}`);
   };
 
+  const filteredJobs = jobs.filter(job => {
+    const searchLower = searchQuery.toLowerCase();
+    const titleMatch = job.title?.toLowerCase().includes(searchLower);
+    const descMatch = job.description?.toLowerCase().includes(searchLower);
+    const locMatch = job.location?.toLowerCase().includes(searchLower);
+    const salaryMatch = job.salary?.toLowerCase().includes(searchLower);
+    const catMatch = job.category?.toLowerCase().includes(searchLower);
+    const tagsMatch = Array.isArray(job.tags) && job.tags.some((tag: string) => tag.toLowerCase().includes(searchLower));
+    
+    return titleMatch || descMatch || locMatch || salaryMatch || catMatch || tagsMatch;
+  });
+
   const confirmDelete = async () => {
     if (jobToDelete !== null) {
       try {
@@ -157,6 +170,32 @@ export default function EmployerJobsPage() {
         </div>
       )}
 
+      {/* Filters */}
+      <div className="bg-white p-4 border border-zinc-200 flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-zinc-400 absolute left-4 top-3" />
+          <input 
+            type="text" 
+            placeholder="Поиск по названию, описанию или тегам..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-11 pr-4 py-2.5 bg-zinc-50 text-sm border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors font-medium"
+          />
+        </div>
+        <div className="flex gap-3">
+          <select className="px-4 py-2.5 bg-zinc-50 text-sm border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 outline-none font-bold text-zinc-700 uppercase tracking-wider">
+            <option>Все статусы</option>
+            <option>Активные</option>
+            <option>Черновики</option>
+            <option>Закрытые</option>
+          </select>
+          <button className="px-4 py-2.5 bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-100 transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+            <Filter className="w-4 h-4" />
+            <span className="hidden sm:inline">Фильтры</span>
+          </button>
+        </div>
+      </div>
+
       <div className="bg-white border border-zinc-200 overflow-hidden">
         <div className="overflow-x-auto min-h-[300px]">
           <table className="w-full text-sm text-left">
@@ -178,14 +217,14 @@ export default function EmployerJobsPage() {
                     Загрузка вакансий...
                   </td>
                 </tr>
-              ) : jobs.length === 0 ? (
+              ) : filteredJobs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-zinc-500 font-medium">
-                    У вас пока нет размещенных вакансий.
+                    {searchQuery ? 'Вакансии по вашему запросу не найдены.' : 'У вас пока нет размещенных вакансий.'}
                   </td>
                 </tr>
               ) : (
-                jobs.map((job) => (
+                filteredJobs.map((job) => (
                   <tr key={job.id} className="hover:bg-zinc-50 transition-colors group">
                     <td className="px-6 py-4 max-w-[200px] sm:max-w-[300px]">
                       <Link href={`/jobs/${job.id}`} className="font-semibold text-zinc-900 hover:text-zinc-600 flex items-center gap-2 transition-colors" title={job.title}>
