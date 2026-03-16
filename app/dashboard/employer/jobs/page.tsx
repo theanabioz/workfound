@@ -187,10 +187,10 @@ export default function EmployerJobsPage() {
               ) : (
                 jobs.map((job) => (
                   <tr key={job.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-5 py-3">
-                      <Link href={`/jobs/${job.id}`} className="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                        {job.title}
-                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <td className="px-5 py-3 max-w-[200px] sm:max-w-[300px]">
+                      <Link href={`/jobs/${job.id}`} className="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1" title={job.title}>
+                        <span className="truncate">{job.title}</span>
+                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                       </Link>
                     </td>
                     <td className="px-5 py-3">
