@@ -2,6 +2,7 @@ import { MapPin, Banknote, Clock, Building2, CheckCircle2, Phone, MessageCircle,
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
+import ApplyButton from '@/components/jobs/ApplyButton';
 
 export default async function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -61,9 +62,11 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                 </div>
                 
                 <div className="shrink-0 flex flex-col gap-3 w-full md:w-auto">
-                  <Link href={`/jobs/${id}/apply`} className="bg-zinc-900 hover:bg-zinc-800 text-white px-8 py-3.5 font-medium transition-colors w-full text-center block">
-                    Откликнуться
-                  </Link>
+                  <ApplyButton 
+                    jobId={job.id} 
+                    jobTitle={job.title} 
+                    employerId={job.employer_id} 
+                  />
                   <button className="bg-zinc-100 hover:bg-zinc-200 text-zinc-900 px-8 py-3.5 font-medium transition-colors w-full flex items-center justify-center gap-2">
                     <MessageCircle className="w-4 h-4" />
                     Написать в WhatsApp
