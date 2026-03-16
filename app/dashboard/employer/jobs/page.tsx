@@ -32,7 +32,7 @@ export default function EmployerJobsPage() {
       }
 
       const { data: jobsData, error: jobsError } = await supabase
-        .from('jobs')
+        .from('vacancies')
         .select('*')
         .eq('employer_id', user.id)
         .order('created_at', { ascending: false });
@@ -42,12 +42,12 @@ export default function EmployerJobsPage() {
       // Fetch application counts for these jobs
       const { data: applicationsData, error: applicationsError } = await supabase
         .from('applications')
-        .select('job_id');
+        .select('vacancy_id');
         
       if (applicationsError) throw applicationsError;
       
       const applicationCounts = applicationsData.reduce((acc: Record<string, number>, app) => {
-        acc[app.job_id] = (acc[app.job_id] || 0) + 1;
+        acc[app.vacancy_id] = (acc[app.vacancy_id] || 0) + 1;
         return acc;
       }, {});
 
@@ -88,7 +88,7 @@ export default function EmployerJobsPage() {
   const updateJobStatus = async (id: string, newStatus: string) => {
     try {
       const { error } = await supabase
-        .from('jobs')
+        .from('vacancies')
         .update({ status: newStatus })
         .eq('id', id);
 
@@ -115,7 +115,7 @@ export default function EmployerJobsPage() {
     if (jobToDelete !== null) {
       try {
         const { error } = await supabase
-          .from('jobs')
+          .from('vacancies')
           .delete()
           .eq('id', jobToDelete);
 

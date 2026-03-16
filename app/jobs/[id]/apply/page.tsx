@@ -35,7 +35,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
       
       try {
         const { data, error } = await supabase
-          .from('jobs')
+          .from('vacancies')
           .select('*')
           .eq('id', jobId)
           .single();
@@ -69,7 +69,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
       const { data: existingApplication } = await supabase
         .from('applications')
         .select('id')
-        .eq('job_id', jobId)
+        .eq('vacancy_id', jobId)
         .eq('applicant_id', user.id)
         .single();
 
@@ -81,7 +81,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
         .from('applications')
         .insert([
           {
-            job_id: jobId,
+            vacancy_id: jobId,
             applicant_id: user.id,
             employer_id: job.employer_id,
             status: 'new',
