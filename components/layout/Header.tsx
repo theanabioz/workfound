@@ -94,48 +94,50 @@ export default function Header() {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center gap-2 cursor-pointer group focus:outline-none"
                   >
-                    <div className="w-7 h-7 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-none flex items-center justify-center font-bold text-xs group-hover:bg-zinc-200 transition-colors">
+                    <div className="w-8 h-8 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-none flex items-center justify-center font-bold text-xs group-hover:bg-zinc-200 transition-colors shrink-0">
                       {name ? name.charAt(0).toUpperCase() : (isEmployer ? 'T' : 'А')}
                     </div>
-                    <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900 transition-colors max-w-[120px] truncate">
+                    <span className="text-base font-medium text-zinc-700 transition-colors max-w-[180px] truncate">
                       {name || (isEmployer ? 'TransLogistics' : 'Алексей С.')}
                     </span>
-                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white border border-zinc-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100 shadow-lg">
-                      <div className="px-4 py-2 border-b border-zinc-100">
-                        <p className="text-sm font-medium text-zinc-900 truncate">{name || (isEmployer ? 'TransLogistics' : 'Алексей С.')}</p>
-                        <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                    <div className="absolute right-0 mt-2 w-max min-w-[220px] bg-white border border-zinc-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-200 shadow-xl">
+                      <div className="px-4 py-3 border-b border-zinc-100 bg-zinc-50/50">
+                        <p className="text-sm font-semibold text-zinc-900 truncate">{name || (isEmployer ? 'TransLogistics' : 'Алексей С.')}</p>
+                        <p className="text-[11px] text-zinc-500 truncate mt-0.5">{user.email}</p>
                       </div>
                       
-                      <Link 
-                        href={dashboardUrl} 
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors whitespace-nowrap"
-                        onClick={() => setIsDropdownOpen(false)}
-                      >
-                        <LayoutDashboard className="w-4 h-4 text-zinc-400 shrink-0" />
-                        Панель управления
-                      </Link>
-                      
-                      <Link 
-                        href={`${dashboardUrl}/settings`} 
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
-                        onClick={() => setIsDropdownOpen(false)}
-                      >
-                        <Settings className="w-4 h-4 text-zinc-400" />
-                        Настройки
-                      </Link>
+                      <div className="py-1">
+                        <Link 
+                          href={dashboardUrl} 
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors whitespace-nowrap"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-zinc-400 shrink-0" />
+                          Панель управления
+                        </Link>
+                        
+                        <Link 
+                          href={`${dashboardUrl}/settings`} 
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors whitespace-nowrap"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <Settings className="w-4 h-4 text-zinc-400 shrink-0" />
+                          Настройки
+                        </Link>
+                      </div>
                       
                       <div className="h-px bg-zinc-100 my-1"></div>
                       
                       <form action={signout}>
                         <button 
                           type="submit" 
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors text-left"
                         >
-                          <LogOut className="w-4 h-4 text-red-500" />
+                          <LogOut className="w-4 h-4 text-red-500 shrink-0" />
                           Выйти
                         </button>
                       </form>

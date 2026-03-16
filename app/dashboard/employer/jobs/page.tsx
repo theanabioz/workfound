@@ -155,10 +155,10 @@ export default function EmployerJobsPage() {
     <div className="space-y-6 max-w-7xl mx-auto relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Мои вакансии</h1>
+          <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">Мои вакансии</h1>
           <p className="text-sm text-zinc-500 mt-1 uppercase tracking-wider font-medium">Управление размещенными вакансиями</p>
         </div>
-        <Link href="/post-job" className="bg-zinc-900 hover:bg-zinc-800 text-white px-6 py-2.5 text-sm font-bold uppercase tracking-wider transition-colors flex items-center gap-2">
+        <Link href="/post-job" className="bg-zinc-900 hover:bg-zinc-800 text-white px-6 py-2.5 text-sm font-semibold uppercase tracking-wider transition-colors flex items-center gap-2">
           <Plus className="w-4 h-4" />
           Новая вакансия
         </Link>
@@ -183,13 +183,13 @@ export default function EmployerJobsPage() {
           />
         </div>
         <div className="flex gap-3">
-          <select className="px-4 py-2.5 bg-zinc-50 text-sm border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 outline-none font-bold text-zinc-700 uppercase tracking-wider">
+          <select className="px-4 py-2.5 bg-zinc-50 text-sm border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 outline-none font-semibold text-zinc-700 uppercase tracking-wider">
             <option>Все статусы</option>
             <option>Активные</option>
             <option>Черновики</option>
             <option>Закрытые</option>
           </select>
-          <button className="px-4 py-2.5 bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-100 transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+          <button className="px-4 py-2.5 bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-100 transition-colors flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Фильтры</span>
           </button>
@@ -202,12 +202,12 @@ export default function EmployerJobsPage() {
           <table className="w-full text-sm text-left">
             <thead className="text-[11px] text-zinc-500 uppercase tracking-wider bg-zinc-50 border-b border-zinc-200">
               <tr>
-                <th className="px-6 py-4 font-bold whitespace-nowrap">Вакансия</th>
-                <th className="px-6 py-4 font-bold whitespace-nowrap">Статус</th>
-                <th className="px-6 py-4 font-bold whitespace-nowrap">Дата публикации</th>
-                <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Просмотры</th>
-                <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Отклики</th>
-                <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Действия</th>
+                <th className="px-6 py-3 font-medium whitespace-nowrap">Вакансия</th>
+                <th className="px-6 py-3 font-medium whitespace-nowrap">Статус</th>
+                <th className="px-6 py-3 font-medium whitespace-nowrap">Дата публикации</th>
+                <th className="px-6 py-3 font-medium text-right whitespace-nowrap">Просмотры</th>
+                <th className="px-6 py-3 font-medium text-right whitespace-nowrap">Отклики</th>
+                <th className="px-6 py-3 font-medium text-right whitespace-nowrap">Действия</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -228,21 +228,21 @@ export default function EmployerJobsPage() {
                 filteredJobs.map((job) => (
                   <tr key={job.id} className="hover:bg-zinc-50 transition-colors group">
                     <td className="px-6 py-4 max-w-[200px] sm:max-w-[300px]">
-                      <Link href={`/jobs/${job.id}`} className="font-semibold text-zinc-900 hover:text-zinc-600 flex items-center gap-2 transition-colors" title={job.title}>
+                      <Link href={`/jobs/${job.id}`} className="font-medium text-zinc-900 hover:text-zinc-600 flex items-center gap-2 transition-colors" title={job.title}>
                         <span className="truncate">{job.title}</span>
                         <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                       </Link>
                     </td>
                     <td className="px-6 py-4">
-                      {job.status === 'active' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border bg-zinc-900 text-white border-zinc-900">Активна</span>}
-                      {job.status === 'draft' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300">Черновик</span>}
-                      {job.status === 'closed' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border bg-white text-zinc-500 border-zinc-200">Закрыта</span>}
+                      {job.status === 'active' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider border bg-zinc-900 text-white border-zinc-900">Активна</span>}
+                      {job.status === 'draft' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300">Черновик</span>}
+                      {job.status === 'closed' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider border bg-white text-zinc-500 border-zinc-200">Закрыта</span>}
                     </td>
                     <td className="px-6 py-4 text-zinc-500 font-mono text-xs whitespace-nowrap">{job.postedAt}</td>
                     <td className="px-6 py-4 text-right text-zinc-600 font-mono text-xs">{job.views}</td>
                     <td className="px-6 py-4 text-right">
                       {job.applications > 0 ? (
-                        <Link href={`/dashboard/employer/applications?jobId=${job.id}`} className="text-zinc-900 font-bold hover:underline font-mono text-xs">
+                        <Link href={`/dashboard/employer/applications?jobId=${job.id}`} className="text-zinc-900 font-medium hover:underline font-mono text-xs">
                           {job.applications}
                         </Link>
                       ) : (

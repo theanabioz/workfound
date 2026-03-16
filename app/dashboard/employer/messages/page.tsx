@@ -3,31 +3,63 @@
 import { Search, Send, Paperclip, MoreVertical, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useSearchParams } from 'next/navigation';
 
-export default function EmployerMessagesPage() {
+function EmployerMessagesPage() {
+  const searchParams = useSearchParams();
+  const seekerIdFromQuery = searchParams.get('seekerId');
+  
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
   const [chats, setChats] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    fetchChats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function fetchChats() {
-    try {
-      setIsLoading(true);
+    const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Необходима авторизация');
+      setCurrentUser(user);
+      if (user) {
+        fetchChats(user.id);
       }
+    };
+    init();
+  }, [supabase, fetchChats]);
 
+  // Real-time subscription
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `employer_id=eq.${currentUser.id}`
+        },
+        (payload) => {
+          // Update chats when a new message arrives
+          fetchChats(currentUser.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, supabase, fetchChats]);
+
+  const fetchChats = useCallback(async (userId: string) => {
+    try {
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -37,14 +69,12 @@ export default function EmployerMessagesPage() {
             full_name
           )
         `)
-        .eq('employer_id', user.id)
+        .eq('employer_id', userId)
         .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching messages:', error);
-        setChats([]);
       } else if (data) {
-        // Group messages by seeker_id
         const groupedChats: Record<string, any> = {};
         
         data.forEach((msg: any) => {
@@ -55,31 +85,60 @@ export default function EmployerMessagesPage() {
             groupedChats[seekerId] = {
               id: seekerId,
               seeker_id: seekerId,
-              company: seekerName,
+              name: seekerName,
               initial: seekerName.charAt(0).toUpperCase(),
-              status: 'В сети', // Mock status
+              status: 'В сети',
               lastSeen: 'Недавно',
-              messages: []
+              messages: [],
+              lastMessageTime: msg.created_at
             };
           }
           
-          const messageTime = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const date = new Date(msg.created_at);
+          const messageTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           
           groupedChats[seekerId].messages.push({
             id: msg.id,
-            sender: msg.is_sender_employer ? 'me' : 'them',
+            isSender: msg.is_sender_employer,
             text: msg.text,
-            time: messageTime
+            time: messageTime,
+            created_at: msg.created_at
           });
+          
+          groupedChats[seekerId].lastMessage = msg.text;
+          groupedChats[seekerId].lastMessageTime = msg.created_at;
         });
 
-        const chatsArray = Object.values(groupedChats).sort((a: any, b: any) => {
-          return 0; 
+        let chatsArray = Object.values(groupedChats).sort((a: any, b: any) => {
+          return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
         });
+
+        if (seekerIdFromQuery && !groupedChats[seekerIdFromQuery]) {
+          const { data: seekerData } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .eq('id', seekerIdFromQuery)
+            .single();
+
+          if (seekerData) {
+            const newChat = {
+              id: seekerData.id,
+              seeker_id: seekerData.id,
+              name: seekerData.full_name || 'Соискатель',
+              initial: (seekerData.full_name || 'С').charAt(0).toUpperCase(),
+              status: 'В сети',
+              lastSeen: 'Недавно',
+              messages: [],
+              lastMessageTime: new Date().toISOString()
+            };
+            chatsArray = [newChat, ...chatsArray];
+            setActiveChatId(seekerData.id);
+          }
+        } else if (seekerIdFromQuery && !activeChatId) {
+          setActiveChatId(seekerIdFromQuery);
+        }
 
         setChats(chatsArray);
-      } else {
-        setChats([]);
       }
     } catch (err: any) {
       console.error('Error in fetchChats:', err);
@@ -87,7 +146,7 @@ export default function EmployerMessagesPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [supabase, seekerIdFromQuery, activeChatId]);
 
   const activeChat = chats.find(chat => chat.id === activeChatId);
 
@@ -100,16 +159,16 @@ export default function EmployerMessagesPage() {
   }, [activeChat?.messages]);
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !activeChat) return;
+    if (!messageInput.trim() || !activeChat || !currentUser) return;
+
+    const text = messageInput.trim();
+    setMessageInput(''); // Clear input immediately for better UX
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const newMessage = {
-        employer_id: user.id,
+        employer_id: currentUser.id,
         seeker_id: activeChat.seeker_id,
-        text: messageInput,
+        text: text,
         is_sender_employer: true
       };
 
@@ -119,12 +178,11 @@ export default function EmployerMessagesPage() {
 
       if (error) throw error;
       
-      // Optimistic update or refetch
-      fetchChats();
-      setMessageInput('');
+      fetchChats(currentUser.id);
     } catch (err) {
       console.error('Error sending message:', err);
       alert('Ошибка при отправке сообщения');
+      setMessageInput(text); // Restore input on error
     }
   };
 
@@ -135,22 +193,29 @@ export default function EmployerMessagesPage() {
     }
   };
 
+  const filteredChats = chats.filter(chat => 
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    chat.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Сообщения</h1>
       </div>
 
-      <div className="flex-1 bg-white rounded-none border border-zinc-200 overflow-hidden flex">
+      <div className="flex-1 bg-white rounded-none border border-zinc-200 overflow-hidden flex relative">
         
         {/* Contacts Sidebar */}
-        <div className="w-full md:w-80 border-r border-zinc-200 flex flex-col bg-zinc-50/50">
+        <div className={`w-full md:w-80 border-r border-zinc-200 flex flex-col bg-zinc-50/50 ${isMobileChatOpen ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-4 border-b border-zinc-200 bg-white">
             <div className="relative">
               <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
               <input 
                 type="text" 
                 placeholder="Поиск кандидатов..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-white border border-zinc-300 rounded-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none text-sm transition-colors"
               />
             </div>
@@ -161,33 +226,36 @@ export default function EmployerMessagesPage() {
               <div className="flex justify-center items-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
               </div>
-            ) : chats.length === 0 ? (
+            ) : filteredChats.length === 0 ? (
               <div className="p-8 text-center text-zinc-500 text-sm">
-                У вас пока нет сообщений.
+                {searchQuery ? 'Ничего не найдено' : 'У вас пока нет сообщений.'}
               </div>
             ) : (
-              chats.map((chat) => (
+              filteredChats.map((chat) => (
                 <div 
                   key={chat.id}
-                  onClick={() => setActiveChatId(chat.id)}
+                  onClick={() => {
+                    setActiveChatId(chat.id);
+                    setIsMobileChatOpen(true);
+                  }}
                   className={`p-4 border-b border-zinc-200 cursor-pointer transition-colors relative ${activeChatId === chat.id ? 'bg-zinc-100' : 'bg-white hover:bg-zinc-50'}`}
                 >
                   {activeChatId === chat.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-zinc-900"></div>}
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 border text-zinc-700 rounded-none flex items-center justify-center font-bold text-sm shrink-0 ${activeChatId === chat.id ? 'bg-white border-zinc-200' : 'bg-zinc-50 border-zinc-200 text-zinc-500'}`}>
-                      {chat.name?.charAt(0) || '?'}
+                      {chat.initial || '?'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline mb-0.5">
                         <h3 className={`text-sm truncate ${activeChatId === chat.id ? 'font-bold text-zinc-900' : 'font-medium text-zinc-900'}`}>
                           {chat.name}
                         </h3>
-                        <span className={`text-[10px] font-medium ${activeChatId === chat.id ? 'text-zinc-500' : 'text-zinc-400'}`}>
-                          {chat.time}
+                        <span className="text-[10px] font-medium text-zinc-400">
+                          {chat.messages.length > 0 && chat.messages[chat.messages.length - 1].time}
                         </span>
                       </div>
                       <p className={`text-xs truncate ${activeChatId === chat.id ? 'text-zinc-600' : 'text-zinc-500'}`}>
-                        {chat.lastMessage}
+                        {chat.lastMessage || 'Нет сообщений'}
                       </p>
                     </div>
                   </div>
@@ -198,18 +266,27 @@ export default function EmployerMessagesPage() {
         </div>
 
         {/* Chat Area */}
-        <div className="hidden md:flex flex-col flex-1 bg-white">
+        <div className={`flex-col flex-1 bg-white ${isMobileChatOpen ? 'flex' : 'hidden md:flex'}`}>
           {activeChat ? (
             <>
               {/* Chat Header */}
-              <div className="h-16 border-b border-zinc-200 px-6 flex items-center justify-between bg-white">
+              <div className="h-16 border-b border-zinc-200 px-4 md:px-6 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setIsMobileChatOpen(false)}
+                    className="md:hidden p-1 -ml-1 text-zinc-400 hover:text-zinc-900"
+                  >
+                    <Search className="w-5 h-5 rotate-90" /> {/* Using search as a back arrow for now or just a simple icon */}
+                  </button>
                   <div className="w-8 h-8 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-none flex items-center justify-center font-bold text-sm">
-                    {activeChat.name?.charAt(0) || '?'}
+                    {activeChat.initial || '?'}
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-zinc-900">{activeChat.name}</h2>
-                    <div className="text-xs text-zinc-500">{activeChat.job}</div>
+                    <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-emerald-500"></span>
+                      {activeChat.status}
+                    </div>
                   </div>
                 </div>
                 <button className="text-zinc-400 hover:text-zinc-600 transition-colors p-1 rounded-none hover:bg-zinc-100">
@@ -218,26 +295,36 @@ export default function EmployerMessagesPage() {
               </div>
 
               {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-zinc-50/50">
-                <div className="flex justify-center">
-                  <span className="text-[10px] font-medium text-zinc-500 bg-white border border-zinc-200 px-2 py-1 rounded-none">Сегодня</span>
-                </div>
-
-                {activeChat.messages?.map((message: any) => (
-                  <div key={message.id} className={`flex gap-3 max-w-2xl ${message.isSender ? 'ml-auto flex-row-reverse' : ''}`}>
-                    <div className={`w-8 h-8 rounded-none flex items-center justify-center font-bold text-sm shrink-0 mt-1 ${message.isSender ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-700'}`}>
-                      {message.isSender ? 'T' : activeChat.name?.charAt(0) || '?'}
-                    </div>
-                    <div className={`flex flex-col ${message.isSender ? 'items-end' : 'items-start'}`}>
-                      <div className={`p-3 rounded-none text-sm whitespace-pre-wrap ${message.isSender ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-800'}`}>
-                        {message.text}
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-zinc-50/50">
+                {activeChat.messages?.map((message: any, index: number) => {
+                  const showDate = index === 0 || 
+                    new Date(message.created_at).toDateString() !== new Date(activeChat.messages[index-1].created_at).toDateString();
+                  
+                  return (
+                    <div key={message.id} className="space-y-6">
+                      {showDate && (
+                        <div className="flex justify-center">
+                          <span className="text-[10px] font-medium text-zinc-500 bg-white border border-zinc-200 px-2 py-1 rounded-none">
+                            {new Date(message.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
+                          </span>
+                        </div>
+                      )}
+                      <div className={`flex gap-3 max-w-2xl ${message.isSender ? 'ml-auto flex-row-reverse' : ''}`}>
+                        <div className={`w-8 h-8 rounded-none flex items-center justify-center font-bold text-sm shrink-0 mt-1 ${message.isSender ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-700'}`}>
+                          {message.isSender ? 'Я' : activeChat.initial || '?'}
+                        </div>
+                        <div className={`flex flex-col ${message.isSender ? 'items-end' : 'items-start'}`}>
+                          <div className={`p-3 rounded-none text-sm whitespace-pre-wrap ${message.isSender ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-800'}`}>
+                            {message.text}
+                          </div>
+                          <div className={`text-[10px] text-zinc-500 mt-1 font-medium flex items-center gap-1 ${message.isSender ? 'mr-1' : 'ml-1'}`}>
+                            {message.time} {message.isSender && <CheckCircle2 className="w-3 h-3 text-zinc-400" />}
+                          </div>
+                        </div>
                       </div>
-                      <div className={`text-[10px] text-zinc-500 mt-1 font-medium flex items-center gap-1 ${message.isSender ? 'mr-1' : 'ml-1'}`}>
-                        {message.time} {message.isSender && <CheckCircle2 className="w-3 h-3 text-zinc-400" />}
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -266,12 +353,27 @@ export default function EmployerMessagesPage() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">
-              Выберите чат для начала общения
+            <div className="flex-1 flex flex-col items-center justify-center text-zinc-400 p-8 text-center">
+              <div className="w-16 h-16 bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-4">
+                <MessageSquare className="w-8 h-8 text-zinc-200" />
+              </div>
+              <h3 className="text-zinc-900 font-bold mb-1">Ваши сообщения</h3>
+              <p className="text-sm max-w-xs">Выберите кандидата из списка слева, чтобы начать переписку</p>
             </div>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+import { Suspense } from 'react';
+import { MessageSquare, Search, Send, Paperclip, MoreVertical, CheckCircle2, Loader2 } from 'lucide-react';
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EmployerMessagesPage />
+    </Suspense>
   );
 }
