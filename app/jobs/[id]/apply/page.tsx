@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/layout/Header';
 import { ChevronLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
@@ -113,8 +112,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex flex-col">
-        <Header />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
         </div>
@@ -124,8 +122,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
 
   if (error && !job) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex flex-col">
-        <Header />
+      <div className="min-h-screen flex flex-col">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-600 mb-4 font-medium">{error}</p>
@@ -137,9 +134,7 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans">
-      <Header />
-      
+    <div className="min-h-screen font-sans">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link href={`/jobs/${jobId}`} className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-900 mb-8 transition-colors">
           <ChevronLeft className="w-4 h-4" />

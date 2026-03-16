@@ -1,4 +1,3 @@
-import Header from '@/components/layout/Header';
 import Hero from '@/components/jobs/Hero';
 import JobFilters from '@/components/jobs/JobFilters';
 import JobCard from '@/components/jobs/JobCard';
@@ -27,8 +26,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
   const { data: jobs, error } = await query.order('created_at', { ascending: false });
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans">
-      <Header />
+    <div className="min-h-screen font-sans">
       <Hero />
 
       {/* Main Content */}

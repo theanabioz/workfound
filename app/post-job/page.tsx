@@ -1,6 +1,5 @@
 'use client';
 
-import Header from '@/components/layout/Header';
 import { Briefcase, MapPin, Euro, FileText, CheckCircle2, Save, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -300,7 +299,6 @@ function PostJobForm() {
 export default function PostJobPage() {
   return (
     <div className="min-h-screen bg-zinc-50 font-sans pb-20">
-      <Header />
       <Suspense fallback={<div className="max-w-3xl mx-auto px-4 py-12 text-center text-zinc-500 font-medium tracking-wider uppercase text-xs">Загрузка...</div>}>
         <PostJobForm />
       </Suspense>

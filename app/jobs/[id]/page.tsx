@@ -1,4 +1,3 @@
-import Header from '@/components/layout/Header';
 import { MapPin, Banknote, Clock, Building2, CheckCircle2, Phone, MessageCircle, ShieldCheck, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
@@ -27,9 +26,7 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
   const descriptionParagraphs = job.description ? job.description.split('\n').filter((p: string) => p.trim() !== '') : [];
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans">
-      <Header />
-      
+    <div className="min-h-screen font-sans">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-900 mb-8 transition-colors">
           <ChevronLeft className="w-4 h-4" />
