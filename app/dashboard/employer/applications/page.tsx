@@ -85,14 +85,14 @@ export default function EmployerApplicationsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm">
+      <div className="bg-red-50 text-red-600 p-4 border border-red-200 text-sm font-medium">
         {error}
       </div>
     );
@@ -100,28 +100,28 @@ export default function EmployerApplicationsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto relative">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Отклики кандидатов</h1>
-          <p className="text-sm text-slate-500 mt-1">Управление кандидатами на ваши вакансии</p>
+          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Отклики кандидатов</h1>
+          <p className="text-sm text-zinc-500 mt-1 uppercase tracking-wider font-medium">Управление кандидатами на ваши вакансии</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3">
+      <div className="bg-white p-4 border border-zinc-200 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-zinc-400 absolute left-4 top-3" />
           <input 
             type="text" 
             placeholder="Поиск по имени или должности..." 
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 text-sm border border-slate-200 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+            className="w-full pl-11 pr-4 py-2.5 bg-zinc-50 text-sm border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors font-medium"
           />
         </div>
-        <div className="flex gap-2">
-          <select className="px-3 py-2 bg-slate-50 text-sm border border-slate-200 rounded-md focus:ring-1 focus:ring-blue-500 outline-none font-medium text-slate-700">
+        <div className="flex gap-3">
+          <select className="px-4 py-2.5 bg-zinc-50 text-sm border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 outline-none font-bold text-zinc-700 uppercase tracking-wider">
             <option>Все вакансии</option>
           </select>
-          <button className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-2 text-sm font-medium">
+          <button className="px-4 py-2.5 bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-100 transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Фильтры</span>
           </button>
@@ -129,65 +129,65 @@ export default function EmployerApplicationsPage() {
       </div>
 
       {/* Candidates Table */}
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white border border-zinc-200 overflow-hidden">
         <div className="overflow-x-auto min-h-[300px]">
           <table className="w-full text-sm text-left">
-            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+            <thead className="text-[11px] text-zinc-500 uppercase tracking-wider bg-zinc-50 border-b border-zinc-200">
               <tr>
-                <th className="px-5 py-3 font-medium">Кандидат</th>
-                <th className="px-5 py-3 font-medium">Вакансия</th>
-                <th className="px-5 py-3 font-medium">Дата отклика</th>
-                <th className="px-5 py-3 font-medium">Статус</th>
-                <th className="px-5 py-3 font-medium text-right">Действия</th>
+                <th className="px-6 py-4 font-bold">Кандидат</th>
+                <th className="px-6 py-4 font-bold">Вакансия</th>
+                <th className="px-6 py-4 font-bold">Дата отклика</th>
+                <th className="px-6 py-4 font-bold">Статус</th>
+                <th className="px-6 py-4 font-bold text-right">Действия</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-zinc-100">
               {applications.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-5 py-12 text-center text-slate-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 font-medium">
                     У вас пока нет откликов.
                   </td>
                 </tr>
               ) : (
                 applications.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center font-bold text-xs shrink-0">
+                  <tr key={app.id} className="hover:bg-zinc-50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-zinc-100 text-zinc-600 flex items-center justify-center font-bold text-sm shrink-0 border border-zinc-200">
                           {app.contact_email ? app.contact_email.charAt(0).toUpperCase() : '?'}
                         </div>
                         <div>
-                          <div className="font-medium text-slate-900 flex items-center gap-2">
+                          <div className="font-semibold text-zinc-900 flex items-center gap-2">
                             {app.contact_email}
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5">Телефон: {app.contact_phone}</div>
+                          <div className="text-xs text-zinc-500 mt-1 font-medium">Телефон: {app.contact_phone}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-slate-600">
-                      <Link href={`/jobs/${app.vacancy_id}`} className="hover:text-blue-600 transition-colors flex items-center gap-1">
+                    <td className="px-6 py-4 text-zinc-600">
+                      <Link href={`/jobs/${app.vacancy_id}`} className="font-semibold text-zinc-900 hover:text-zinc-600 transition-colors flex items-center gap-2">
                         {app.vacancies?.title || 'Неизвестная вакансия'}
-                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-blue-600" />
+                        <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400" />
                       </Link>
                     </td>
-                    <td className="px-5 py-3 text-slate-500 font-mono text-xs">
+                    <td className="px-6 py-4 text-zinc-500 font-mono text-xs">
                       {new Date(app.created_at).toLocaleDateString('ru-RU')}
                     </td>
-                    <td className="px-5 py-3">
-                      {app.status === 'new' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-blue-100 text-blue-700 border-blue-200 whitespace-nowrap">Новый</span>}
-                      {app.status === 'review' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-amber-100 text-amber-700 border-amber-200 whitespace-nowrap">На рассмотрении</span>}
-                      {app.status === 'accepted' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-emerald-100 text-emerald-700 border-emerald-200 whitespace-nowrap">Приглашен</span>}
-                      {app.status === 'rejected' && <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium border bg-slate-100 text-slate-700 border-slate-200 whitespace-nowrap">Отказ</span>}
+                    <td className="px-6 py-4">
+                      {app.status === 'new' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300 whitespace-nowrap">Новый</span>}
+                      {app.status === 'review' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300 whitespace-nowrap">На рассмотрении</span>}
+                      {app.status === 'accepted' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border bg-zinc-900 text-white border-zinc-900 whitespace-nowrap">Приглашен</span>}
+                      {app.status === 'rejected' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border bg-white text-zinc-500 border-zinc-200 whitespace-nowrap">Отказ</span>}
                     </td>
-                    <td className="px-5 py-3 text-right relative">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Link href="/dashboard/employer/messages" className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50 transition-colors" title="Написать сообщение">
+                    <td className="px-6 py-4 text-right relative">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link href="/dashboard/employer/messages" className="p-2 text-zinc-400 hover:text-zinc-900 border border-transparent hover:border-zinc-200 hover:bg-white transition-all" title="Написать сообщение">
                           <Mail className="w-4 h-4" />
                         </Link>
                         {app.status !== 'accepted' && (
                           <button 
                             onClick={() => handleStatusChange(app.id, 'accepted')}
-                            className="p-1.5 text-slate-400 hover:text-emerald-600 rounded hover:bg-emerald-50 transition-colors" 
+                            className="p-2 text-zinc-400 hover:text-emerald-600 border border-transparent hover:border-emerald-200 hover:bg-emerald-50 transition-all" 
                             title="Пригласить"
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -196,7 +196,7 @@ export default function EmployerApplicationsPage() {
                         {app.status !== 'rejected' && (
                           <button 
                             onClick={() => handleStatusChange(app.id, 'rejected')}
-                            className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors" 
+                            className="p-2 text-zinc-400 hover:text-red-600 border border-transparent hover:border-red-200 hover:bg-red-50 transition-all" 
                             title="Отказать"
                           >
                             <XCircle className="w-4 h-4" />
@@ -207,7 +207,7 @@ export default function EmployerApplicationsPage() {
                       {/* Mobile Actions Dropdown */}
                       <button 
                         onClick={() => toggleDropdown(app.id)}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100 transition-colors md:hidden absolute right-5 top-1/2 -translate-y-1/2"
+                        className="p-2 text-zinc-400 hover:text-zinc-900 border border-transparent hover:border-zinc-200 hover:bg-white transition-all md:hidden absolute right-6 top-1/2 -translate-y-1/2"
                       >
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
@@ -215,16 +215,16 @@ export default function EmployerApplicationsPage() {
                       {openDropdownId === app.id && (
                         <div 
                           ref={dropdownRef}
-                          className="md:hidden absolute right-5 top-10 w-max min-w-[12rem] bg-white rounded-md shadow-lg border border-slate-200 z-10 py-1 text-left"
+                          className="md:hidden absolute right-8 top-10 w-max min-w-[12rem] bg-white border border-zinc-200 z-10 py-1 text-left"
                         >
-                          <Link href="/dashboard/employer/messages" className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap">
-                            <Mail className="w-4 h-4 text-slate-400" />
+                          <Link href="/dashboard/employer/messages" className="w-full px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 flex items-center gap-3 whitespace-nowrap transition-colors">
+                            <Mail className="w-4 h-4 text-zinc-400" />
                             Написать сообщение
                           </Link>
                           {app.status !== 'accepted' && (
                             <button 
                               onClick={() => handleStatusChange(app.id, 'accepted')}
-                              className="w-full px-4 py-2 text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2 whitespace-nowrap"
+                              className="w-full px-4 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 flex items-center gap-3 whitespace-nowrap transition-colors"
                             >
                               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                               Пригласить
@@ -233,7 +233,7 @@ export default function EmployerApplicationsPage() {
                           {app.status !== 'rejected' && (
                             <button 
                               onClick={() => handleStatusChange(app.id, 'rejected')}
-                              className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 whitespace-nowrap"
+                              className="w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-3 whitespace-nowrap transition-colors"
                             >
                               <XCircle className="w-4 h-4 text-red-500" />
                               Отказать

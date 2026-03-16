@@ -40,14 +40,14 @@ function LoginForm() {
   return (
     <>
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center gap-2 text-blue-600 justify-center hover:opacity-80 transition-opacity">
+        <Link href="/" className="inline-flex items-center gap-2 text-zinc-900 justify-center hover:opacity-80 transition-opacity">
           <Briefcase className="w-10 h-10" />
-          <span className="text-3xl font-extrabold tracking-tight text-slate-900">Work<span className="text-blue-600">Found</span></span>
+          <span className="text-3xl font-extrabold tracking-tight text-zinc-900">Work<span className="text-zinc-500">Found</span></span>
         </Link>
-        <h2 className="mt-6 text-center text-2xl font-bold tracking-tight text-slate-900">
+        <h2 className="mt-6 text-center text-2xl font-bold tracking-tight text-zinc-900">
           {isLogin ? 'Войдите в аккаунт' : 'Создайте аккаунт'}
         </h2>
-        <p className="mt-2 text-center text-sm text-slate-600">
+        <p className="mt-2 text-center text-sm text-zinc-600">
           {isLogin ? 'Или ' : 'Уже есть аккаунт? '}
           <button 
             type="button"
@@ -56,7 +56,7 @@ function LoginForm() {
               setMessage(null);
               setSuccessMessage(null);
             }} 
-            className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            className="font-medium text-zinc-900 hover:text-zinc-700 underline decoration-zinc-400 underline-offset-4 transition-colors"
           >
             {isLogin ? 'создайте новый аккаунт' : 'войдите в систему'}
           </button>
@@ -64,14 +64,14 @@ function LoginForm() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl shadow-slate-200/50 sm:rounded-3xl sm:px-10 border border-slate-200/75">
+        <div className="bg-white py-8 px-4 sm:px-10 border border-zinc-200">
           {message && (
-            <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm font-medium rounded-xl border border-red-200 text-center">
+            <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm font-medium border border-red-200 text-center">
               {message}
             </div>
           )}
           {successMessage && (
-            <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm font-medium rounded-xl border border-green-200 text-center">
+            <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm font-medium border border-green-200 text-center">
               {successMessage}
             </div>
           )}
@@ -81,17 +81,17 @@ function LoginForm() {
               <>
                 {/* Role Selection */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                  <label className="block text-sm font-semibold text-zinc-900 mb-2 uppercase tracking-wider">
                     Я хочу...
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setRole('seeker')}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border font-semibold text-sm transition-all ${
+                      className={`flex items-center justify-center gap-2 py-3 px-4 border font-semibold text-sm transition-all ${
                         role === 'seeker' 
-                          ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-sm' 
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'bg-zinc-900 border-zinc-900 text-white' 
+                          : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
                       }`}
                     >
                       <UserIcon className="w-4 h-4" />
@@ -100,10 +100,10 @@ function LoginForm() {
                     <button
                       type="button"
                       onClick={() => setRole('employer')}
-                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border font-semibold text-sm transition-all ${
+                      className={`flex items-center justify-center gap-2 py-3 px-4 border font-semibold text-sm transition-all ${
                         role === 'employer' 
-                          ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-sm' 
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'bg-zinc-900 border-zinc-900 text-white' 
+                          : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-50'
                       }`}
                     >
                       <Building2 className="w-4 h-4" />
@@ -115,19 +115,19 @@ function LoginForm() {
 
                 {/* Name */}
                 <div>
-                  <label htmlFor="name" className="block text-sm font-semibold text-slate-900">
+                  <label htmlFor="name" className="block text-sm font-semibold text-zinc-900 uppercase tracking-wider">
                     {role === 'seeker' ? 'Имя и Фамилия' : 'Название компании'}
                   </label>
                   <div className="mt-2 relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                      {role === 'seeker' ? <UserIcon className="h-5 w-5 text-slate-400" /> : <Building2 className="h-5 w-5 text-slate-400" />}
+                      {role === 'seeker' ? <UserIcon className="h-5 w-5 text-zinc-400" /> : <Building2 className="h-5 w-5 text-zinc-400" />}
                     </div>
                     <input
                       id="name"
                       name="name"
                       type="text"
                       required={!isLogin}
-                      className="block w-full pl-11 pr-3 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-slate-50 text-slate-900 transition-colors outline-none"
+                      className="block w-full pl-11 pr-3 py-3.5 border border-zinc-200 focus:ring-0 focus:border-zinc-500 sm:text-sm bg-zinc-50 text-zinc-900 transition-colors outline-none"
                       placeholder={role === 'seeker' ? 'Иван Иванов' : 'ООО Компания'}
                     />
                   </div>
@@ -137,12 +137,12 @@ function LoginForm() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-slate-900">
+              <label htmlFor="email" className="block text-sm font-semibold text-zinc-900 uppercase tracking-wider">
                 Email
               </label>
               <div className="mt-2 relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-slate-400" />
+                  <Mail className="h-5 w-5 text-zinc-400" />
                 </div>
                 <input
                   id="email"
@@ -150,7 +150,7 @@ function LoginForm() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="block w-full pl-11 pr-3 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-slate-50 text-slate-900 transition-colors outline-none"
+                  className="block w-full pl-11 pr-3 py-3.5 border border-zinc-200 focus:ring-0 focus:border-zinc-500 sm:text-sm bg-zinc-50 text-zinc-900 transition-colors outline-none"
                   placeholder="you@example.com"
                 />
               </div>
@@ -159,12 +159,12 @@ function LoginForm() {
             {/* Password */}
             <div>
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-semibold text-slate-900">
+                <label htmlFor="password" className="block text-sm font-semibold text-zinc-900 uppercase tracking-wider">
                   Пароль
                 </label>
                 {isLogin && (
                   <div className="text-sm">
-                    <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                    <a href="#" className="font-medium text-zinc-600 hover:text-zinc-900 underline decoration-zinc-400 underline-offset-4 transition-colors">
                       Забыли пароль?
                     </a>
                   </div>
@@ -172,7 +172,7 @@ function LoginForm() {
               </div>
               <div className="mt-2 relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-400" />
+                  <Lock className="h-5 w-5 text-zinc-400" />
                 </div>
                 <input
                   id="password"
@@ -181,7 +181,7 @@ function LoginForm() {
                   autoComplete={isLogin ? "current-password" : "new-password"}
                   required
                   minLength={6}
-                  className="block w-full pl-11 pr-3 py-3.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-slate-50 text-slate-900 transition-colors outline-none"
+                  className="block w-full pl-11 pr-3 py-3.5 border border-zinc-200 focus:ring-0 focus:border-zinc-500 sm:text-sm bg-zinc-50 text-zinc-900 transition-colors outline-none"
                   placeholder="••••••••"
                 />
               </div>
@@ -190,7 +190,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-md shadow-blue-600/20 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all disabled:opacity-70"
+              className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent text-sm font-bold text-white bg-zinc-900 hover:bg-zinc-800 transition-all disabled:opacity-70 uppercase tracking-wider"
             >
               {isPending ? (
                 <>
@@ -213,7 +213,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-zinc-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <Suspense fallback={<div className="text-center py-10">Загрузка...</div>}>
         <LoginForm />
       </Suspense>

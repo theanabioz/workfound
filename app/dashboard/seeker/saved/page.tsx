@@ -74,27 +74,27 @@ export default function SavedJobsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-200">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Сохраненные вакансии</h1>
-          <p className="text-sm text-slate-500 mt-1">Вакансии, которые вы добавили в избранное</p>
+          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Сохраненные вакансии</h1>
+          <p className="text-sm text-zinc-500 mt-1 uppercase tracking-wider font-medium">Вакансии, которые вы добавили в избранное</p>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 text-red-700 rounded-lg">
+        <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded-none text-sm font-medium">
           {error}
         </div>
       )}
 
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
         </div>
       ) : savedJobs.length === 0 ? (
-        <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
-          <p className="text-slate-500 mb-4">У вас нет сохраненных вакансий.</p>
-          <Link href="/" className="text-blue-600 hover:text-blue-800 font-medium">Перейти к поиску вакансий</Link>
+        <div className="bg-white rounded-none border border-zinc-200 p-12 text-center">
+          <p className="text-zinc-500 mb-4 font-medium">У вас нет сохраненных вакансий.</p>
+          <Link href="/" className="text-zinc-900 hover:text-zinc-600 font-bold uppercase tracking-wider text-sm transition-colors">Перейти к поиску вакансий</Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
@@ -111,7 +111,7 @@ export default function SavedJobsPage() {
               />
               <button 
                 onClick={() => removeJob(job.saved_id)}
-                className="absolute top-4 right-4 p-2 bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all shadow-sm z-10"
+                className="absolute top-4 right-4 p-2 bg-white border border-zinc-200 text-zinc-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 rounded-none opacity-0 group-hover:opacity-100 transition-all z-10"
                 title="Удалить из сохраненных"
               >
                 <Trash2 className="w-4 h-4" />

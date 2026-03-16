@@ -14,58 +14,58 @@ interface JobCardProps {
 
 export default function JobCard({ id, title, company, location, salary, tags, postedAt, isPremium }: JobCardProps) {
   return (
-    <div className={`group bg-white rounded-2xl border p-5 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 ${isPremium ? 'border-blue-200 bg-gradient-to-b from-blue-50/50 to-white' : 'border-slate-200/75 hover:border-blue-200'}`}>
-      <div className="flex justify-between items-start gap-4">
+    <div className={`group bg-white border-b transition-colors duration-200 hover:bg-zinc-50 p-6 ${isPremium ? 'border-l-4 border-l-zinc-800 border-b-zinc-200' : 'border-b-zinc-200 border-l-4 border-l-transparent'}`}>
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div className="flex-1">
           {isPremium && (
-            <div className="flex items-center gap-1.5 text-blue-600 text-xs font-bold uppercase tracking-wider mb-3">
-              <Star className="w-3.5 h-3.5 fill-current" />
-              Премиум
+            <div className="flex items-center gap-1.5 text-zinc-900 text-[10px] font-bold uppercase tracking-widest mb-3">
+              <Star className="w-3 h-3 fill-current" />
+              Premium
             </div>
           )}
           <Link href={`/jobs/${id}`} className="block">
-            <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors mb-1.5">{title}</h3>
+            <h3 className="text-lg font-semibold text-zinc-900 group-hover:underline decoration-2 underline-offset-4 mb-1">{title}</h3>
           </Link>
-          <div className="text-slate-600 font-medium mb-4">{company}</div>
+          <div className="text-zinc-500 text-sm mb-4">{company}</div>
           
-          <div className="flex flex-wrap gap-y-2 gap-x-5 text-sm text-slate-600 mb-5">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-slate-400" />
+          <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm text-zinc-700 mb-5">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-zinc-400" />
               {location}
             </div>
-            <div className="flex items-center gap-1.5 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-              <Banknote className="w-4 h-4 text-emerald-600" />
+            <div className="flex items-center gap-2 font-medium">
+              <Banknote className="w-4 h-4 text-zinc-400" />
               {salary}
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2">
             {tags.map((tag, index) => (
-              <span key={index} className="bg-slate-100 text-slate-600 text-xs px-3 py-1.5 rounded-lg font-medium">
+              <span key={index} className="border border-zinc-200 text-zinc-600 text-[11px] uppercase tracking-wider px-2.5 py-1 font-medium">
                 {tag}
               </span>
             ))}
           </div>
         </div>
         
-        <div className="hidden sm:flex flex-col items-end justify-between h-full min-h-[130px]">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+        <div className="hidden sm:flex flex-col items-end justify-between h-full min-h-[120px]">
+          <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 font-medium uppercase tracking-wider">
             <Clock className="w-3.5 h-3.5" />
             {postedAt}
           </div>
-          <Link href={`/jobs/${id}`} className="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all mt-auto">
+          <Link href={`/jobs/${id}`} className="bg-zinc-900 text-white hover:bg-zinc-800 px-6 py-2 text-sm font-medium transition-colors mt-auto">
             Откликнуться
           </Link>
         </div>
       </div>
       
       {/* Mobile footer */}
-      <div className="sm:hidden flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+      <div className="sm:hidden flex items-center justify-between mt-6 pt-4 border-t border-zinc-100">
+        <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 font-medium uppercase tracking-wider">
           <Clock className="w-3.5 h-3.5" />
           {postedAt}
         </div>
-        <Link href={`/jobs/${id}`} className="bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all">
+        <Link href={`/jobs/${id}`} className="bg-zinc-900 text-white hover:bg-zinc-800 px-5 py-2 text-sm font-medium transition-colors">
           Откликнуться
         </Link>
       </div>

@@ -106,7 +106,7 @@ export default function ResumePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
       </div>
     );
   }
@@ -114,79 +114,79 @@ export default function ResumePage() {
   return (
     <div className="space-y-6 max-w-4xl relative">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Мое резюме</h1>
-        <p className="text-sm text-slate-500 mt-1">Заполните профиль, чтобы работодатели могли вас найти</p>
+        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Мое резюме</h1>
+        <p className="text-sm text-zinc-500 mt-1 uppercase tracking-wider font-medium">Заполните профиль, чтобы работодатели могли вас найти</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm">
+        <div className="bg-red-50 text-red-600 p-4 border border-red-200 text-sm font-medium">
           {error}
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative">
+      <div className="bg-white border border-zinc-200 overflow-hidden relative">
         {/* Success Toast */}
         <div 
-          className={`absolute top-4 right-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg shadow-sm flex items-center gap-3 transition-all duration-300 z-50 ${
+          className={`absolute top-4 right-4 bg-zinc-900 text-white px-4 py-3 flex items-center gap-3 transition-all duration-300 z-50 ${
             showSuccess ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
           }`}
         >
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-          <div className="text-sm font-medium">Изменения сохранены</div>
+          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+          <div className="text-sm font-bold uppercase tracking-wider">Изменения сохранены</div>
         </div>
 
         <div className="p-6 md:p-8 space-y-8">
           
           {/* Basic Info */}
           <section>
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <User className="w-4 h-4 text-slate-400" />
+            <h2 className="text-sm font-bold text-zinc-900 uppercase tracking-wider mb-6 flex items-center gap-2 border-b border-zinc-200 pb-2">
+              <User className="w-4 h-4 text-zinc-400" />
               Основная информация
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-slate-700 mb-1">ФИО</label>
-                <input type="text" name="full_name" value={profile.full_name} onChange={handleChange} placeholder="Иванов Иван Иванович" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">ФИО</label>
+                <input type="text" name="full_name" value={profile.full_name} onChange={handleChange} placeholder="Иванов Иван Иванович" className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors text-sm font-medium" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-slate-700 mb-1">Желаемая должность</label>
-                <input type="text" name="desired_position" value={profile.desired_position} onChange={handleChange} placeholder="Например: Водитель-дальнобойщик CE" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Желаемая должность</label>
+                <input type="text" name="desired_position" value={profile.desired_position} onChange={handleChange} placeholder="Например: Водитель-дальнобойщик CE" className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors text-sm font-medium" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Телефон</label>
+                <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Телефон</label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input type="tel" name="phone" value={profile.phone} onChange={handleChange} placeholder="+48 123 456 789" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                  <Phone className="w-4 h-4 text-zinc-400 absolute left-4 top-3" />
+                  <input type="tel" name="phone" value={profile.phone} onChange={handleChange} placeholder="+48 123 456 789" className="w-full pl-11 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors text-sm font-medium" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Email</label>
+                <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Email</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="alex.smirnov@example.com" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                  <Mail className="w-4 h-4 text-zinc-400 absolute left-4 top-3" />
+                  <input type="email" name="email" value={profile.email} onChange={handleChange} placeholder="alex.smirnov@example.com" className="w-full pl-11 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors text-sm font-medium" />
                 </div>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-slate-700 mb-1">Текущее местоположение</label>
+                <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Текущее местоположение</label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input type="text" name="location" value={profile.location} onChange={handleChange} placeholder="Варшава, Польша" className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm" />
+                  <MapPin className="w-4 h-4 text-zinc-400 absolute left-4 top-3" />
+                  <input type="text" name="location" value={profile.location} onChange={handleChange} placeholder="Варшава, Польша" className="w-full pl-11 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors text-sm font-medium" />
                 </div>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-slate-700 mb-1">О себе</label>
-                <textarea name="about" value={profile.about} onChange={handleChange} rows={4} placeholder="Опыт работы по Европе более 5 лет..." className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-slate-900 focus:border-slate-900 outline-none transition-colors text-sm resize-none"></textarea>
+                <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-2">О себе</label>
+                <textarea name="about" value={profile.about} onChange={handleChange} rows={5} placeholder="Опыт работы по Европе более 5 лет..." className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 focus:bg-white focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 outline-none transition-colors text-sm font-medium resize-none leading-relaxed"></textarea>
               </div>
             </div>
           </section>
 
         </div>
         
-        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+        <div className="bg-zinc-50 p-6 border-t border-zinc-200 flex justify-end">
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-slate-900 hover:bg-slate-800 disabled:bg-slate-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+            className="bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-700 text-white px-8 py-3 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2"
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -113,10 +113,10 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-zinc-50 flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <Loader2 className="w-8 h-8 animate-spin text-zinc-900" />
         </div>
       </div>
     );
@@ -124,12 +124,12 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
 
   if (error && !job) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-zinc-50 flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-500 mb-4">{error}</p>
-            <Link href="/" className="text-blue-600 hover:underline">Вернуться на главную</Link>
+            <p className="text-red-600 mb-4 font-medium">{error}</p>
+            <Link href="/" className="text-zinc-900 hover:underline font-medium">Вернуться на главную</Link>
           </div>
         </div>
       </div>
@@ -137,37 +137,37 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="min-h-screen bg-zinc-50 font-sans">
       <Header />
       
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href={`/jobs/${jobId}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-blue-600 mb-8 transition-colors">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Link href={`/jobs/${jobId}`} className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-900 mb-8 transition-colors">
           <ChevronLeft className="w-4 h-4" />
           Вернуться к вакансии
         </Link>
 
-        <div className="bg-white rounded-3xl border border-slate-200/75 p-6 md:p-10 shadow-sm">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Отклик на вакансию</h1>
-          <p className="text-slate-600 mb-8 text-lg">{job?.title}</p>
+        <div className="bg-white border border-zinc-200 p-8 md:p-12">
+          <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-2 tracking-tight">Отклик на вакансию</h1>
+          <p className="text-zinc-600 mb-10 text-lg">{job?.title}</p>
 
           {success ? (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 text-center">
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+            <div className="bg-zinc-50 border border-zinc-200 p-10 text-center">
+              <div className="w-16 h-16 bg-zinc-100 border border-zinc-200 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-8 h-8 text-zinc-900" />
               </div>
-              <h2 className="text-xl font-bold text-emerald-900 mb-2">Отклик успешно отправлен!</h2>
-              <p className="text-emerald-700">Работодатель получит ваше резюме и сопроводительное письмо. Перенаправляем вас в личный кабинет...</p>
+              <h2 className="text-xl font-bold text-zinc-900 mb-3 tracking-tight">Отклик успешно отправлен!</h2>
+              <p className="text-zinc-600">Работодатель получит ваше резюме и сопроводительное письмо. Перенаправляем вас в личный кабинет...</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {error && (
-                <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm">
+                <div className="bg-red-50 border border-red-200 text-red-700 p-4 text-sm font-medium">
                   {error}
                 </div>
               )}
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-semibold text-slate-900 mb-2">
+                <label htmlFor="phone" className="block text-xs font-bold uppercase tracking-wider text-zinc-900 mb-3">
                   Контактный телефон
                 </label>
                 <input
@@ -177,13 +177,13 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                  className="w-full px-4 py-3.5 bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white outline-none transition-colors text-zinc-900"
                   placeholder="+1 234 567 8900"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-slate-900 mb-2">
+                <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-zinc-900 mb-3">
                   Email для связи
                 </label>
                 <input
@@ -193,13 +193,13 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                  className="w-full px-4 py-3.5 bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white outline-none transition-colors text-zinc-900"
                   placeholder="your@email.com"
                 />
               </div>
 
               <div>
-                <label htmlFor="coverLetter" className="block text-sm font-semibold text-slate-900 mb-2">
+                <label htmlFor="coverLetter" className="block text-xs font-bold uppercase tracking-wider text-zinc-900 mb-3">
                   Сопроводительное письмо
                 </label>
                 <textarea
@@ -208,16 +208,16 @@ export default function ApplyJobPage({ params }: { params: Promise<{ id: string 
                   value={formData.coverLetter}
                   onChange={handleChange}
                   rows={6}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all resize-none"
+                  className="w-full px-4 py-3.5 bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white outline-none transition-colors resize-none text-zinc-900"
                   placeholder="Напишите, почему вы подходите на эту должность..."
                 ></textarea>
               </div>
 
-              <div className="pt-4">
+              <div className="pt-6 border-t border-zinc-200">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold transition-all shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full bg-zinc-900 hover:bg-zinc-800 text-white px-8 py-4 font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>
