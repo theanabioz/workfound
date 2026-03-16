@@ -42,7 +42,7 @@ function PostJobForm() {
       
       try {
         const { data, error } = await supabase
-          .from('jobs')
+          .from('vacancies')
           .select('*')
           .eq('id', editId)
           .single();
@@ -110,7 +110,7 @@ function PostJobForm() {
 
       if (isEditing && editId) {
         const { error: updateError } = await supabase
-          .from('jobs')
+          .from('vacancies')
           .update(jobData)
           .eq('id', editId)
           .eq('employer_id', user.id); // Security check
@@ -118,7 +118,7 @@ function PostJobForm() {
         if (updateError) throw updateError;
       } else {
         const { error: insertError } = await supabase
-          .from('jobs')
+          .from('vacancies')
           .insert([jobData]);
 
         if (insertError) throw insertError;
@@ -128,6 +128,8 @@ function PostJobForm() {
       router.refresh();
     } catch (err: any) {
       console.error('Error saving job:', err);
+      if (err.details) console.error('Error details:', err.details);
+      if (err.hint) console.error('Error hint:', err.hint);
       setError(err.message || 'Произошла ошибка при сохранении вакансии.');
     } finally {
       setIsLoading(false);

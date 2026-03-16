@@ -50,8 +50,8 @@ export default function Header() {
         </div>
         
         <div className="hidden md:flex items-center gap-6">
-          <Link href="/vacancies" className="text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors">Вакансии</Link>
-          <Link href="/companies" className="text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors">Компании</Link>
+          <Link href="/" className="text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors">Главная</Link>
+          <Link href="/" className="text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors">Вакансии</Link>
           
           <div className="w-px h-4 bg-slate-200"></div>
           

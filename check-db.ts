@@ -8,7 +8,7 @@ async function run() {
   const { data: apps, error: appsError } = await supabase.from('applications').select('*').limit(1);
   console.log('Apps error:', appsError);
   
-  const { data: jobs, error: jobsError } = await supabase.from('jobs').select('*').limit(1);
-  console.log('Jobs error:', jobsError);
+  const { data: vacancies, error: jobsError } = await supabase.from('vacancies').select('*').limit(1);
+  console.log('Vacancies error:', jobsError);
 }
 run();
