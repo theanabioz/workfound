@@ -35,9 +35,12 @@ export default function JobListContainer({ children }: JobListContainerProps) {
     if (isUpdating) {
       const timer = setTimeout(() => {
         setIsUpdating(false);
-        // Возвращаем стандартный min-height после завершения анимации
-        setMinHeight('400px');
-      }, 500);
+        // Не сбрасываем minHeight сразу, даем контенту отрисоваться
+        const resetTimer = setTimeout(() => {
+          setMinHeight('400px');
+        }, 300);
+        return () => clearTimeout(resetTimer);
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [isUpdating]);
