@@ -82,7 +82,6 @@ export default function EmployerProfilePage() {
       if (!user) throw new Error('Необходима авторизация');
 
       const updates = {
-        id: user.id,
         full_name: profile.full_name,
         phone: profile.phone,
         email: profile.email,
@@ -95,7 +94,8 @@ export default function EmployerProfilePage() {
 
       const { error } = await supabase
         .from('profiles')
-        .upsert(updates);
+        .update(updates)
+        .eq('id', user.id);
 
       if (error) throw error;
 

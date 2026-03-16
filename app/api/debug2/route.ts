@@ -6,13 +6,13 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const supabase = await createClient();
   
-  const { data, error } = await supabase.rpc('get_columns', { table_name: 'profiles' });
-  if (error) {
-    // maybe we can query information_schema directly if we use a raw query, but supabase JS doesn't support it easily.
-    // Let's just try to select 1 row and see its keys.
-    const { data: profiles } = await supabase.from('profiles').select('*').limit(1);
-    return NextResponse.json({ columns: profiles && profiles.length > 0 ? Object.keys(profiles[0]) : [] });
-  }
+  const updates = {
+    full_name: 'test update 2',
+  };
 
-  return NextResponse.json({ data });
+  const { error: updateError } = await supabase.from('profiles').update(updates).eq('id', 'b7a01ea3-97e1-4c8b-9e6e-20537f371341');
+  
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', 'b7a01ea3-97e1-4c8b-9e6e-20537f371341').single();
+
+  return NextResponse.json({ updateError, profile });
 }
