@@ -57,27 +57,32 @@ export default function Header() {
 
   return (
     <header className="bg-white border-b border-zinc-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center">
+        {/* Logo */}
+        <div className="flex items-center gap-2 shrink-0">
           <Link href="/" className="flex items-center gap-2 text-zinc-900 hover:opacity-80 transition-opacity">
             <Briefcase className="w-6 h-6" />
             <span className="text-xl font-bold tracking-tight text-zinc-900">Work<span className="text-zinc-500">Found</span></span>
           </Link>
         </div>
         
-        <div className="hidden md:flex items-center gap-6">
-          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Главная</Link>
-          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Вакансии</Link>
-          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Для работодателей</Link>
-          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Для соискателей</Link>
-          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Цены</Link>
-          
+        {/* Desktop Navigation - Centered */}
+        <div className="hidden lg:flex flex-1 items-center justify-center gap-6 px-8">
+          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors whitespace-nowrap">Главная</Link>
+          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors whitespace-nowrap">Вакансии</Link>
+          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors whitespace-nowrap">Для работодателей</Link>
+          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors whitespace-nowrap">Для соискателей</Link>
+          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors whitespace-nowrap">Цены</Link>
+        </div>
+        
+        {/* Right Actions */}
+        <div className="hidden lg:flex items-center gap-6 shrink-0">
           <div className="w-px h-4 bg-zinc-200"></div>
           
           {!isLoading && (
             user ? (
               <div className="flex items-center gap-4">
-                <Link href={dashboardUrl} className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">
+                <Link href={dashboardUrl} className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors whitespace-nowrap">
                   Панель управления
                 </Link>
                 <button className="text-zinc-400 hover:text-zinc-600 transition-colors relative">
@@ -140,11 +145,11 @@ export default function Header() {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <Link href="/login" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium flex items-center gap-1.5 transition-colors">
+                <Link href="/login" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap">
                   <User className="w-4 h-4" />
                   Войти
                 </Link>
-                <Link href="/login" className="bg-zinc-900 hover:bg-zinc-800 text-white text-sm px-4 py-2 font-medium transition-colors">
+                <Link href="/login" className="bg-zinc-900 hover:bg-zinc-800 text-white text-sm px-4 py-2 font-medium transition-colors whitespace-nowrap">
                   Разместить вакансию
                 </Link>
               </div>
@@ -152,17 +157,20 @@ export default function Header() {
           )}
         </div>
 
-        <button 
-          className="md:hidden text-zinc-600 p-2 -mr-2"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        {/* Mobile Menu Toggle */}
+        <div className="flex lg:hidden flex-1 justify-end">
+          <button 
+            className="text-zinc-600 p-2 -mr-2"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-zinc-200 bg-white absolute top-14 left-0 right-0 shadow-lg z-40">
+        <div className="lg:hidden border-t border-zinc-200 bg-white absolute top-14 left-0 right-0 shadow-lg z-40">
           <div className="px-4 py-4 space-y-4">
             <Link href="/" className="block text-base font-medium text-zinc-900" onClick={() => setIsMobileMenuOpen(false)}>Главная</Link>
             <Link href="/" className="block text-base font-medium text-zinc-900" onClick={() => setIsMobileMenuOpen(false)}>Вакансии</Link>
