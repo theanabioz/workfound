@@ -162,12 +162,12 @@ export default function EmployerJobsPage() {
           <table className="w-full text-sm text-left">
             <thead className="text-[11px] text-zinc-500 uppercase tracking-wider bg-zinc-50 border-b border-zinc-200">
               <tr>
-                <th className="px-6 py-4 font-bold">Вакансия</th>
-                <th className="px-6 py-4 font-bold">Статус</th>
-                <th className="px-6 py-4 font-bold">Дата публикации</th>
-                <th className="px-6 py-4 font-bold text-right">Просмотры</th>
-                <th className="px-6 py-4 font-bold text-right">Отклики</th>
-                <th className="px-6 py-4 font-bold text-right">Действия</th>
+                <th className="px-6 py-4 font-bold whitespace-nowrap">Вакансия</th>
+                <th className="px-6 py-4 font-bold whitespace-nowrap">Статус</th>
+                <th className="px-6 py-4 font-bold whitespace-nowrap">Дата публикации</th>
+                <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Просмотры</th>
+                <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Отклики</th>
+                <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Действия</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -198,7 +198,7 @@ export default function EmployerJobsPage() {
                       {job.status === 'draft' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300">Черновик</span>}
                       {job.status === 'closed' && <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border bg-white text-zinc-500 border-zinc-200">Закрыта</span>}
                     </td>
-                    <td className="px-6 py-4 text-zinc-500 font-mono text-xs">{job.postedAt}</td>
+                    <td className="px-6 py-4 text-zinc-500 font-mono text-xs whitespace-nowrap">{job.postedAt}</td>
                     <td className="px-6 py-4 text-right text-zinc-600 font-mono text-xs">{job.views}</td>
                     <td className="px-6 py-4 text-right">
                       {job.applications > 0 ? (

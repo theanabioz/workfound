@@ -132,11 +132,11 @@ export default function ApplicationsPage() {
           <table className="w-full text-sm text-left">
             <thead className="text-[11px] text-zinc-500 uppercase tracking-wider bg-zinc-50 border-b border-zinc-200">
               <tr>
-                <th className="px-6 py-4 font-bold">Вакансия</th>
-                <th className="px-6 py-4 font-bold">Компания</th>
-                <th className="px-6 py-4 font-bold">Дата отклика</th>
-                <th className="px-6 py-4 font-bold">Статус</th>
-                <th className="px-6 py-4 font-bold text-right">Действия</th>
+                <th className="px-6 py-4 font-bold whitespace-nowrap">Вакансия</th>
+                <th className="px-6 py-4 font-bold whitespace-nowrap">Компания</th>
+                <th className="px-6 py-4 font-bold whitespace-nowrap">Дата отклика</th>
+                <th className="px-6 py-4 font-bold whitespace-nowrap">Статус</th>
+                <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Действия</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -160,7 +160,7 @@ export default function ApplicationsPage() {
                       <Building2 className="w-4 h-4 text-zinc-400" />
                       {app.vacancies?.employer?.full_name || 'Прямой работодатель'}
                     </td>
-                    <td className="px-6 py-4 text-zinc-500 font-mono text-xs">
+                    <td className="px-6 py-4 text-zinc-500 font-mono text-xs whitespace-nowrap">
                       {new Date(app.created_at).toLocaleDateString('ru-RU')}
                     </td>
                     <td className="px-6 py-4">

@@ -43,7 +43,7 @@ export default function JobCard({ id, title, company, location, salary, tags, po
                 <MapPin className="w-4 h-4 text-zinc-400" />
                 {location}
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 whitespace-nowrap">
                 <Clock className="w-4 h-4 text-zinc-400" />
                 {postedAt}
               </div>
