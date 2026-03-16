@@ -31,10 +31,7 @@ export default function JobListContainer({ children }: JobListContainerProps) {
   }, [isUpdating]);
 
   return (
-    <motion.div 
-      layout
-      className="relative min-h-[400px]"
-    >
+    <div className="relative min-h-[600px]">
       <AnimatePresence>
         {isUpdating && (
           <motion.div
@@ -51,12 +48,9 @@ export default function JobListContainer({ children }: JobListContainerProps) {
         )}
       </AnimatePresence>
 
-      <motion.div 
-        layout
-        className={`transition-opacity duration-300 ${isUpdating ? 'opacity-50' : 'opacity-100'}`}
-      >
+      <div className={`transition-opacity duration-300 ${isUpdating ? 'opacity-50' : 'opacity-100'}`}>
         {children}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
