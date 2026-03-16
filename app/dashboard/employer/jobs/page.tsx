@@ -37,14 +37,20 @@ export default function EmployerJobsPage() {
         .eq('employer_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (jobsError) throw jobsError;
+      if (jobsError) {
+        console.error('Supabase jobsError:', jobsError);
+        throw jobsError;
+      }
       
       // Fetch application counts for these jobs
       const { data: applicationsData, error: applicationsError } = await supabase
         .from('applications')
         .select('vacancy_id');
         
-      if (applicationsError) throw applicationsError;
+      if (applicationsError) {
+        console.error('Supabase applicationsError:', applicationsError);
+        throw applicationsError;
+      }
       
       const applicationCounts = applicationsData.reduce((acc: Record<string, number>, app) => {
         acc[app.vacancy_id] = (acc[app.vacancy_id] || 0) + 1;
@@ -65,7 +71,8 @@ export default function EmployerJobsPage() {
       setJobs(formattedJobs);
     } catch (err: any) {
       console.error('Error fetching jobs:', err);
-      setError('Не удалось загрузить вакансии.');
+      console.error('Error details:', JSON.stringify(err, null, 2));
+      setError(`Не удалось загрузить вакансии: ${err.message || 'Неизвестная ошибка'}`);
     } finally {
       setIsLoading(false);
     }

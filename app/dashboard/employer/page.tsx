@@ -64,7 +64,10 @@ export default function EmployerDashboard() {
           .eq('employer_id', user.id)
           .eq('status', 'active');
 
-        if (jobsError) throw jobsError;
+        if (jobsError) {
+          console.error('Supabase jobsError:', jobsError);
+          throw jobsError;
+        }
 
         const { count: newAppsCount, error: newAppsError } = await supabase
           .from('applications')
@@ -72,7 +75,10 @@ export default function EmployerDashboard() {
           .eq('vacancies.employer_id', user.id)
           .eq('status', 'new');
 
-        if (newAppsError) throw newAppsError;
+        if (newAppsError) {
+          console.error('Supabase newAppsError:', newAppsError);
+          throw newAppsError;
+        }
 
         setStats({
           activeJobs: activeJobsCount || 0,
