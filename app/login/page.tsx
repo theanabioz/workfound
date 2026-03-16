@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Briefcase, Mail, Lock, User as UserIcon, Building2, ArrowRight, Loader2 } from 'lucide-react';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useTransition } from 'react';
 import { login, signup } from './actions';
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -13,29 +13,28 @@ function LoginForm() {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(searchParams.get('message'));
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const handleSubmit = async (formData: FormData) => {
-    setIsPending(true);
+  const handleSubmit = (formData: FormData) => {
     setMessage(null);
     setSuccessMessage(null);
     
-    const action = isLogin ? login : signup;
-    const result = await action(formData);
-    
-    setIsPending(false);
-    
-    if (result?.error) {
-      if (result.error.includes('Регистрация успешна')) {
-        setSuccessMessage(result.error);
-        setIsLogin(true); // Switch to login view
-      } else {
-        setMessage(result.error);
+    startTransition(async () => {
+      const action = isLogin ? login : signup;
+      const result = await action(formData);
+      
+      if (result?.error) {
+        if (result.error.includes('Регистрация успешна')) {
+          setSuccessMessage(result.error);
+          setIsLogin(true); // Switch to login view
+        } else {
+          setMessage(result.error);
+        }
+      } else if (result?.success) {
+        router.push(`/dashboard/${result.role}`);
+        router.refresh();
       }
-    } else if (result?.success) {
-      router.push(`/dashboard/${result.role}`);
-      router.refresh();
-    }
+    });
   };
 
   return (
