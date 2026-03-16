@@ -104,7 +104,7 @@ export default function Header() {
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white border border-zinc-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute right-0 mt-2 w-56 bg-white border border-zinc-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100 shadow-lg">
                       <div className="px-4 py-2 border-b border-zinc-100">
                         <p className="text-sm font-medium text-zinc-900 truncate">{name || (isEmployer ? 'TransLogistics' : 'Алексей С.')}</p>
                         <p className="text-xs text-zinc-500 truncate">{user.email}</p>
@@ -112,10 +112,10 @@ export default function Header() {
                       
                       <Link 
                         href={dashboardUrl} 
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors whitespace-nowrap"
                         onClick={() => setIsDropdownOpen(false)}
                       >
-                        <LayoutDashboard className="w-4 h-4 text-zinc-400" />
+                        <LayoutDashboard className="w-4 h-4 text-zinc-400 shrink-0" />
                         Панель управления
                       </Link>
                       
