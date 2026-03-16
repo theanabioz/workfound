@@ -1,12 +1,29 @@
+'use client';
+
+import { useState } from 'react';
+import { Filter, X } from 'lucide-react';
+
 export default function JobFilters() {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <div className="bg-white border border-zinc-200 p-6 sticky top-24">
-      <h3 className="font-bold text-zinc-900 mb-6 flex items-center justify-between text-sm uppercase tracking-wider">
-        Фильтры
-        <button className="text-[11px] text-zinc-500 font-medium hover:text-zinc-900 transition-colors uppercase tracking-wider">Сбросить</button>
-      </h3>
-      
-      <div className="space-y-8">
+    <>
+      {/* Mobile Filter Toggle */}
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="md:hidden w-full flex items-center justify-center gap-2 bg-white border border-zinc-200 py-3 px-4 text-sm font-bold text-zinc-900 uppercase tracking-wider mb-6"
+      >
+        <Filter className="w-4 h-4" />
+        {isOpen ? 'Скрыть фильтры' : 'Показать фильтры'}
+      </button>
+
+      <div className={`${isOpen ? 'block' : 'hidden'} md:block bg-white border border-zinc-200 p-6 sticky top-24`}>
+        <h3 className="font-bold text-zinc-900 mb-6 flex items-center justify-between text-sm uppercase tracking-wider">
+          Фильтры
+          <button className="text-[11px] text-zinc-500 font-medium hover:text-zinc-900 transition-colors uppercase tracking-wider">Сбросить</button>
+        </h3>
+        
+        <div className="space-y-8">
         {/* Category */}
         <div>
           <h4 className="font-semibold text-[11px] text-zinc-900 mb-3 uppercase tracking-wider">Специальность</h4>
@@ -68,7 +85,8 @@ export default function JobFilters() {
             ))}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

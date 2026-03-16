@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Briefcase, User, Menu, Bell, LogOut, ChevronDown, Settings, LayoutDashboard } from 'lucide-react';
+import { Briefcase, User, Menu, X, Bell, LogOut, ChevronDown, Settings, LayoutDashboard } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { signout } from '@/app/login/actions';
@@ -12,6 +12,7 @@ export default function Header() {
   const [name, setName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
@@ -145,10 +146,87 @@ export default function Header() {
           )}
         </div>
 
-        <button className="md:hidden text-zinc-600">
-          <Menu className="w-5 h-5" />
+        <button 
+          className="md:hidden text-zinc-600 p-2 -mr-2"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-zinc-200 bg-white absolute top-14 left-0 right-0 shadow-lg z-40">
+          <div className="px-4 py-4 space-y-4">
+            <Link href="/" className="block text-base font-medium text-zinc-900" onClick={() => setIsMobileMenuOpen(false)}>Главная</Link>
+            <Link href="/" className="block text-base font-medium text-zinc-900" onClick={() => setIsMobileMenuOpen(false)}>Вакансии</Link>
+            
+            <div className="h-px bg-zinc-200 my-4"></div>
+            
+            {!isLoading && (
+              user ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-none flex items-center justify-center font-bold text-base">
+                      {name ? name.charAt(0).toUpperCase() : (isEmployer ? 'T' : 'А')}
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-medium text-zinc-900 truncate">{name || (isEmployer ? 'TransLogistics' : 'Алексей С.')}</p>
+                      <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                    </div>
+                  </div>
+                  
+                  <Link 
+                    href={dashboardUrl} 
+                    className="flex items-center gap-3 text-base font-medium text-zinc-700"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <LayoutDashboard className="w-5 h-5 text-zinc-400" />
+                    Панель управления
+                  </Link>
+                  
+                  <Link 
+                    href={`${dashboardUrl}/settings`} 
+                    className="flex items-center gap-3 text-base font-medium text-zinc-700"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Settings className="w-5 h-5 text-zinc-400" />
+                    Настройки
+                  </Link>
+                  
+                  <form action={signout}>
+                    <button 
+                      type="submit" 
+                      className="w-full flex items-center gap-3 text-base font-medium text-red-600 text-left"
+                    >
+                      <LogOut className="w-5 h-5 text-red-500" />
+                      Выйти
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Link 
+                    href="/login" 
+                    className="flex items-center gap-3 text-base font-medium text-zinc-900"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <User className="w-5 h-5 text-zinc-400" />
+                    Войти
+                  </Link>
+                  <Link 
+                    href="/login" 
+                    className="block w-full text-center bg-zinc-900 text-white text-base py-3 font-medium transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Разместить вакансию
+                  </Link>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
