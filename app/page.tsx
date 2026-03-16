@@ -32,7 +32,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
       <Hero />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row gap-8 min-h-[800px]">
         {/* Filters Sidebar */}
         <aside className="w-full md:w-64 shrink-0">
           <JobFilters />

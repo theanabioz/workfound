@@ -2,7 +2,7 @@ import { Search, MapPin } from 'lucide-react';
 
 export default function Hero() {
   return (
-    <section className="bg-zinc-950 text-zinc-50 py-20 lg:py-28 border-b border-zinc-800">
+    <section className="bg-zinc-950 text-zinc-50 py-24 border-b border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
           Надежная работа в Европе <br className="hidden md:block" />
