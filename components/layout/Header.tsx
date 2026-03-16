@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Briefcase, User, Menu, Bell, LogOut } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Briefcase, User, Menu, Bell, LogOut, ChevronDown, Settings, LayoutDashboard } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { signout } from '@/app/login/actions';
 
@@ -11,7 +11,19 @@ export default function Header() {
   const [role, setRole] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const getUser = async () => {
@@ -65,20 +77,58 @@ export default function Header() {
                   <Bell className="w-4 h-4" />
                   <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full"></span>
                 </button>
-                <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-                  <div className="flex items-center gap-2 cursor-pointer group">
+                <div className="relative pl-4 border-l border-slate-200" ref={dropdownRef}>
+                  <button 
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center gap-2 cursor-pointer group focus:outline-none"
+                  >
                     <div className="w-7 h-7 bg-slate-100 border border-slate-200 text-slate-700 rounded-md flex items-center justify-center font-bold text-xs group-hover:bg-slate-200 transition-colors">
                       {name ? name.charAt(0).toUpperCase() : (isEmployer ? 'T' : 'А')}
                     </div>
                     <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition-colors max-w-[120px] truncate">
                       {name || (isEmployer ? 'TransLogistics' : 'Алексей С.')}
                     </span>
-                  </div>
-                  <form action={signout}>
-                    <button type="submit" className="text-slate-400 hover:text-red-600 transition-colors ml-1 flex items-center" title="Выйти">
-                      <LogOut className="w-4 h-4" />
-                    </button>
-                  </form>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-slate-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-4 py-2 border-b border-slate-100">
+                        <p className="text-sm font-medium text-slate-900 truncate">{name || (isEmployer ? 'TransLogistics' : 'Алексей С.')}</p>
+                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                      </div>
+                      
+                      <Link 
+                        href={dashboardUrl} 
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-slate-400" />
+                        Панель управления
+                      </Link>
+                      
+                      <Link 
+                        href={`${dashboardUrl}/settings`} 
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <Settings className="w-4 h-4 text-slate-400" />
+                        Настройки
+                      </Link>
+                      
+                      <div className="h-px bg-slate-100 my-1"></div>
+                      
+                      <form action={signout}>
+                        <button 
+                          type="submit" 
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                        >
+                          <LogOut className="w-4 h-4 text-red-500" />
+                          Выйти
+                        </button>
+                      </form>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
