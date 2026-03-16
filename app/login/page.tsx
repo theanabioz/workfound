@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Briefcase, Mail, Lock, User as UserIcon, Building2, ArrowRight } from 'lucide-react';
+import { Briefcase, Mail, Lock, User as UserIcon, Building2, ArrowRight, Loader2 } from 'lucide-react';
 import { useState, Suspense } from 'react';
 import { login, signup } from './actions';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -193,8 +193,17 @@ function LoginForm() {
               disabled={isPending}
               className="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-md shadow-blue-600/20 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all disabled:opacity-70"
             >
-              {isPending ? 'Подождите...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
-              <ArrowRight className="w-4 h-4" />
+              {isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Подождите...
+                </>
+              ) : (
+                <>
+                  {isLogin ? 'Войти' : 'Зарегистрироваться'}
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
         </div>
