@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, MoreHorizontal, ExternalLink, Edit, Eye, EyeOff, Trash2, AlertTriangle, Loader2, Search, Filter } from 'lucide-react';
+import { Plus, MoreHorizontal, ExternalLink, Edit, Eye, EyeOff, Trash2, AlertTriangle, Loader2, Search, Filter, Users } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
@@ -197,7 +197,8 @@ export default function EmployerJobsPage() {
       </div>
 
       <div className="bg-white border border-zinc-200 overflow-hidden">
-        <div className="overflow-x-auto min-h-[300px]">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto min-h-[300px]">
           <table className="w-full text-sm text-left">
             <thead className="text-[11px] text-zinc-500 uppercase tracking-wider bg-zinc-50 border-b border-zinc-200">
               <tr>
@@ -304,6 +305,108 @@ export default function EmployerJobsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-zinc-100">
+          {isLoading ? (
+            <div className="px-6 py-12 text-center text-zinc-500 font-medium">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-zinc-900" />
+              Загрузка вакансий...
+            </div>
+          ) : filteredJobs.length === 0 ? (
+            <div className="px-6 py-12 text-center text-zinc-500 font-medium">
+              {searchQuery ? 'Вакансии по вашему запросу не найдены.' : 'У вас пока нет размещенных вакансий.'}
+            </div>
+          ) : (
+            filteredJobs.map((job) => (
+              <div key={job.id} className="p-4 space-y-4">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/jobs/${job.id}`} className="font-bold text-zinc-900 block mb-1">
+                      {job.title}
+                    </Link>
+                    <div className="flex items-center gap-2">
+                      {job.status === 'active' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-zinc-900 text-white border-zinc-900">Активна</span>}
+                      {job.status === 'draft' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300">Черновик</span>}
+                      {job.status === 'closed' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-white text-zinc-500 border-zinc-200">Закрыта</span>}
+                      <span className="text-[10px] text-zinc-400 font-mono">{job.postedAt}</span>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <button 
+                      onClick={() => toggleDropdown(job.id)}
+                      className="text-zinc-400 hover:text-zinc-900 p-2 border border-zinc-100 bg-zinc-50"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                    {openDropdownId === job.id && (
+                      <div 
+                        ref={dropdownRef}
+                        className="absolute right-0 top-10 w-max min-w-[12rem] bg-white border border-zinc-200 z-10 py-1 text-left shadow-xl"
+                      >
+                        <button 
+                          onClick={() => handleEdit(job.id)}
+                          className="w-full px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 flex items-center gap-3 whitespace-nowrap transition-colors"
+                        >
+                          <Edit className="w-4 h-4 text-zinc-400" />
+                          Редактировать
+                        </button>
+                        {job.status !== 'active' ? (
+                          <button 
+                            onClick={() => handleActivate(job.id)}
+                            className="w-full px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 flex items-center gap-3 whitespace-nowrap transition-colors"
+                          >
+                            <Eye className="w-4 h-4 text-zinc-400" />
+                            Активировать
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleDeactivate(job.id)}
+                            className="w-full px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 flex items-center gap-3 whitespace-nowrap transition-colors"
+                          >
+                            <EyeOff className="w-4 h-4 text-zinc-400" />
+                            Деактивировать
+                          </button>
+                        )}
+                        <div className="h-px bg-zinc-100 my-1"></div>
+                        <button 
+                          onClick={() => {
+                            setJobToDelete(job.id);
+                            setOpenDropdownId(null);
+                          }}
+                          className="w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-3 whitespace-nowrap transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                          Удалить
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-50">
+                  <div className="bg-zinc-50 p-2 rounded flex flex-col items-center justify-center">
+                    <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-1">Просмотры</span>
+                    <div className="flex items-center gap-1.5">
+                      <Eye className="w-3.5 h-3.5 text-zinc-400" />
+                      <span className="text-sm font-mono font-bold text-zinc-700">{job.views}</span>
+                    </div>
+                  </div>
+                  <Link 
+                    href={job.applications > 0 ? `/dashboard/employer/applications?jobId=${job.id}` : '#'}
+                    className={`p-2 rounded flex flex-col items-center justify-center transition-colors ${job.applications > 0 ? 'bg-zinc-900 text-white hover:bg-zinc-800' : 'bg-zinc-50 text-zinc-400'}`}
+                  >
+                    <span className={`text-[10px] uppercase font-bold tracking-wider mb-1 ${job.applications > 0 ? 'text-zinc-400' : 'text-zinc-400'}`}>Отклики</span>
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      <span className="text-sm font-mono font-bold">{job.applications}</span>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

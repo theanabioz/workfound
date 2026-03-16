@@ -140,7 +140,8 @@ export default function EmployerApplicationsPage() {
 
       {/* Candidates Table */}
       <div className="bg-white border border-zinc-200 overflow-hidden">
-        <div className="overflow-x-auto min-h-[300px]">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto min-h-[300px]">
           <table className="w-full text-sm text-left">
             <thead className="text-[11px] text-zinc-500 uppercase tracking-wider bg-zinc-50 border-b border-zinc-200">
               <tr>
@@ -257,6 +258,89 @@ export default function EmployerApplicationsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-zinc-100">
+          {filteredApplications.length === 0 ? (
+            <div className="px-6 py-12 text-center text-zinc-500 font-medium">
+              {searchQuery ? 'Отклики по вашему запросу не найдены.' : 'У вас пока нет откликов.'}
+            </div>
+          ) : (
+            filteredApplications.map((app) => (
+              <div key={app.id} className="p-4 space-y-4">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-zinc-100 text-zinc-600 flex items-center justify-center font-bold text-sm shrink-0 border border-zinc-200">
+                      {app.contact_email ? app.contact_email.charAt(0).toUpperCase() : '?'}
+                    </div>
+                    <div>
+                      <div className="font-bold text-zinc-900 text-sm">{app.contact_email}</div>
+                      <div className="text-[10px] text-zinc-500 font-medium">{app.contact_phone}</div>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <button 
+                      onClick={() => toggleDropdown(app.id)}
+                      className="text-zinc-400 hover:text-zinc-900 p-2 border border-zinc-100 bg-zinc-50"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                    {openDropdownId === app.id && (
+                      <div 
+                        ref={dropdownRef}
+                        className="absolute right-0 top-10 w-max min-w-[12rem] bg-white border border-zinc-200 z-10 py-1 text-left shadow-xl"
+                      >
+                        <Link href="/dashboard/employer/messages" className="w-full px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 flex items-center gap-3 whitespace-nowrap transition-colors">
+                          <Mail className="w-4 h-4 text-zinc-400" />
+                          Написать сообщение
+                        </Link>
+                        {app.status !== 'accepted' && (
+                          <button 
+                            onClick={() => handleStatusChange(app.id, 'accepted')}
+                            className="w-full px-4 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 flex items-center gap-3 whitespace-nowrap transition-colors"
+                          >
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            Пригласить
+                          </button>
+                        )}
+                        {app.status !== 'rejected' && (
+                          <button 
+                            onClick={() => handleStatusChange(app.id, 'rejected')}
+                            className="w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-3 whitespace-nowrap transition-colors"
+                          >
+                            <XCircle className="w-4 h-4 text-red-500" />
+                            Отказать
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-zinc-50 p-3 space-y-2">
+                  <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                    <span>Вакансия</span>
+                    <span>Статус</span>
+                  </div>
+                  <div className="flex justify-between items-center gap-4">
+                    <Link href={`/jobs/${app.vacancy_id}`} className="font-bold text-zinc-900 text-xs truncate">
+                      {app.vacancies?.title || 'Неизвестная вакансия'}
+                    </Link>
+                    <div>
+                      {app.status === 'new' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300 whitespace-nowrap">Новый</span>}
+                      {app.status === 'review' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300 whitespace-nowrap">На рассмотрении</span>}
+                      {app.status === 'accepted' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-zinc-900 text-white border-zinc-900 whitespace-nowrap">Приглашен</span>}
+                      {app.status === 'rejected' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-white text-zinc-500 border-zinc-200 whitespace-nowrap">Отказ</span>}
+                    </div>
+                  </div>
+                  <div className="pt-1 text-[10px] text-zinc-400 font-mono">
+                    Отклик от {new Date(app.created_at).toLocaleDateString('ru-RU')}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

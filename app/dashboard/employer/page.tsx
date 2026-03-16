@@ -196,7 +196,9 @@ export default function EmployerDashboard() {
             Открыть CRM <ChevronRight className="w-4 h-4 ml-1" />
           </Link>
         </div>
-        <div className="overflow-x-auto">
+        
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="text-[11px] text-zinc-500 uppercase tracking-wider bg-white border-b border-zinc-200">
               <tr>
@@ -291,6 +293,97 @@ export default function EmployerDashboard() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-zinc-100">
+          {applications.length === 0 ? (
+            <div className="px-6 py-12 text-center text-zinc-500 font-medium">
+              У вас пока нет недавних откликов.
+            </div>
+          ) : (
+            applications.map((app) => (
+              <div key={app.id} className="p-4 space-y-3">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-zinc-900 truncate">{app.contact_email}</div>
+                    <div className="text-xs text-zinc-600 font-medium mt-0.5">{app.vacancies?.title || 'Неизвестная вакансия'}</div>
+                  </div>
+                  <div className="relative">
+                    <button 
+                      onClick={() => toggleDropdown(app.id)}
+                      className="text-zinc-400 hover:text-zinc-900 p-2 border border-zinc-100 bg-zinc-50"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                    {openDropdownId === app.id && (
+                      <div 
+                        ref={dropdownRef}
+                        className="absolute right-0 top-10 w-56 bg-white border border-zinc-200 py-1 z-10 text-left shadow-xl"
+                      >
+                        <div className="px-4 py-2.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider border-b border-zinc-100 mb-1 bg-zinc-50">
+                          Изменить статус
+                        </div>
+                        <button 
+                          onClick={() => updateStatus(app.id, 'new')}
+                          className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 flex items-center gap-3 transition-colors"
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-zinc-400"></div>
+                          Новый
+                        </button>
+                        <button 
+                          onClick={() => updateStatus(app.id, 'review')}
+                          className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 flex items-center gap-3 transition-colors"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                          На рассмотрении
+                        </button>
+                        <button 
+                          onClick={() => updateStatus(app.id, 'accepted')}
+                          className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 flex items-center gap-3 transition-colors"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-zinc-900" />
+                          Приглашен
+                        </button>
+                        <button 
+                          onClick={() => updateStatus(app.id, 'rejected')}
+                          className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 flex items-center gap-3 transition-colors"
+                        >
+                          <XCircle className="w-3.5 h-3.5 text-zinc-400" />
+                          Отказ
+                        </button>
+                        <div className="border-t border-zinc-100 my-1"></div>
+                        <Link 
+                          href="/dashboard/employer/messages"
+                          className="w-full text-left px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 flex items-center gap-3 transition-colors"
+                        >
+                          <Mail className="w-3.5 h-3.5 text-zinc-400" />
+                          Написать сообщение
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-between items-center bg-zinc-50 p-2">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Статус</span>
+                    <div>
+                      {app.status === 'new' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300">Новый</span>}
+                      {app.status === 'review' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-zinc-100 text-zinc-800 border-zinc-300">На рассмотрении</span>}
+                      {app.status === 'accepted' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-zinc-900 text-white border-zinc-900">Приглашен</span>}
+                      {app.status === 'rejected' && <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border bg-white text-zinc-500 border-zinc-200">Отказ</span>}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Дата</span>
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      {new Date(app.created_at).toLocaleDateString('ru-RU')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

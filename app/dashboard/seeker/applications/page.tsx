@@ -128,7 +128,8 @@ export default function ApplicationsPage() {
       </div>
 
       <div className="bg-white border border-zinc-200 overflow-hidden">
-        <div className="overflow-x-auto min-h-[300px]">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto min-h-[300px]">
           <table className="w-full text-sm text-left">
             <thead className="text-[11px] text-zinc-500 uppercase tracking-wider bg-zinc-50 border-b border-zinc-200">
               <tr>
@@ -205,6 +206,91 @@ export default function ApplicationsPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-zinc-100">
+          {applications.length === 0 ? (
+            <div className="px-6 py-12 text-center text-zinc-500 font-medium">
+              У вас пока нет откликов на вакансии.
+            </div>
+          ) : (
+            applications.map((app) => (
+              <div key={app.id} className="p-4 space-y-4">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/jobs/${app.vacancy_id}`} className="font-bold text-zinc-900 block mb-1">
+                      {app.vacancies?.title || 'Неизвестная вакансия'}
+                    </Link>
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-medium">
+                      <Building2 className="w-3 h-3" />
+                      {app.vacancies?.employer?.full_name || 'Прямой работодатель'}
+                    </div>
+                  </div>
+                  <div className="relative">
+                    {app.status === 'accepted' ? (
+                      <Link href="/dashboard/seeker/messages" className="p-2 text-zinc-900 hover:text-white bg-zinc-100 hover:bg-zinc-900 border border-zinc-300 hover:border-zinc-900 transition-colors block">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Link>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => toggleDropdown(app.id)}
+                          className="text-zinc-400 hover:text-zinc-900 p-2 border border-zinc-100 bg-zinc-50"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                        {openDropdownId === app.id && (
+                          <div 
+                            ref={dropdownRef}
+                            className="absolute right-0 top-10 w-max min-w-[12rem] bg-white border border-zinc-200 z-10 py-1 text-left shadow-xl"
+                          >
+                            <button 
+                              onClick={() => {
+                                setAppToDelete(app.id);
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-3 whitespace-nowrap transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                              Отозвать отклик
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-zinc-50 p-3 space-y-2">
+                  <div className="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                    <span>Статус</span>
+                    <span>Дата отклика</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div>{getStatusBadge(app.status)}</div>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {new Date(app.created_at).toLocaleDateString('ru-RU')}
+                    </span>
+                  </div>
+                  <div className="pt-1 text-[10px] text-zinc-500 font-medium flex items-center gap-2">
+                    <MapPin className="w-3 h-3" />
+                    {app.vacancies?.location} • {app.vacancies?.salary}
+                  </div>
+                </div>
+
+                {app.status === 'accepted' && (
+                  <Link 
+                    href="/dashboard/seeker/messages"
+                    className="w-full py-2.5 bg-zinc-900 text-white text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-2"
+                  >
+                    Перейти в чат
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
