@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { Briefcase, User, Menu, X, Bell, LogOut, ChevronDown, Settings, LayoutDashboard } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { signout } from '@/app/login/actions';
+import { EMPLOYER_LINKS, SEEKER_LINKS } from '@/utils/constants';
 
 export default function Header() {
   const [user, setUser] = useState<any>(null);
@@ -51,6 +53,7 @@ export default function Header() {
   
   const isEmployer = role === 'employer';
   const dashboardUrl = isEmployer ? '/dashboard/employer' : '/dashboard/seeker';
+  const dashboardLinks = isEmployer ? EMPLOYER_LINKS : SEEKER_LINKS;
 
   return (
     <header className="bg-white border-b border-zinc-200 sticky top-0 z-50">
@@ -166,24 +169,20 @@ export default function Header() {
             {!isLoading && (
               user ? (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-none flex items-center justify-center font-bold text-base">
-                      {name ? name.charAt(0).toUpperCase() : (isEmployer ? 'T' : 'А')}
-                    </div>
-                    <div className="overflow-hidden">
-                      <p className="text-sm font-medium text-zinc-900 truncate">{name || (isEmployer ? 'TransLogistics' : 'Алексей С.')}</p>
-                      <p className="text-xs text-zinc-500 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                  
-                  <Link 
-                    href={dashboardUrl} 
-                    className="flex items-center gap-3 text-base font-medium text-zinc-700"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <LayoutDashboard className="w-5 h-5 text-zinc-400" />
-                    Панель управления
-                  </Link>
+                  {dashboardLinks.map((link) => {
+                    const Icon = (Icons as any)[link.icon];
+                    return (
+                      <Link
+                        key={link.name}
+                        href={link.href}
+                        className="flex items-center gap-3 text-base font-medium text-zinc-700"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Icon className="w-5 h-5 text-zinc-400" />
+                        {link.name}
+                      </Link>
+                    );
+                  })}
                   
                   <Link 
                     href={`${dashboardUrl}/settings`} 

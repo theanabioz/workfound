@@ -2,36 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Briefcase, Users, MessageSquare, Building, CreditCard, FileText, Send, Bookmark } from 'lucide-react';
+import * as Icons from 'lucide-react';
+import { EMPLOYER_LINKS, SEEKER_LINKS } from '@/utils/constants';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const isEmployer = pathname.includes('/dashboard/employer');
-
-  const employerLinks = [
-    { name: 'Обзор', href: '/dashboard/employer', icon: LayoutDashboard },
-    { name: 'Мои вакансии', href: '/dashboard/employer/jobs', icon: Briefcase },
-    { name: 'Отклики', href: '/dashboard/employer/applications', icon: Users },
-    { name: 'Сообщения', href: '/dashboard/employer/messages', icon: MessageSquare },
-    { name: 'Профиль компании', href: '/dashboard/employer/profile', icon: Building },
-    { name: 'Платные услуги', href: '/dashboard/employer/billing', icon: CreditCard },
-  ];
-
-  const seekerLinks = [
-    { name: 'Обзор', href: '/dashboard/seeker', icon: LayoutDashboard },
-    { name: 'Мое резюме', href: '/dashboard/seeker/resume', icon: FileText },
-    { name: 'Мои отклики', href: '/dashboard/seeker/applications', icon: Send },
-    { name: 'Сохраненные', href: '/dashboard/seeker/saved', icon: Bookmark },
-    { name: 'Сообщения', href: '/dashboard/seeker/messages', icon: MessageSquare },
-  ];
-
-  const links = isEmployer ? employerLinks : seekerLinks;
+  const links = isEmployer ? EMPLOYER_LINKS : SEEKER_LINKS;
 
   return (
     <aside className="w-64 shrink-0 hidden md:block">
       <nav className="space-y-1.5 sticky top-24">
         {links.map((link) => {
-          const Icon = link.icon;
+          const Icon = (Icons as any)[link.icon];
           const isActive = pathname === link.href;
           return (
             <Link
