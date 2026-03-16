@@ -116,6 +116,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ [
                 location={job.location}
                 salary={job.salary}
                 tags={job.benefits || []}
+                description={job.description}
                 postedAt={new Date(job.created_at).toLocaleDateString('ru-RU', {
                   day: 'numeric',
                   month: 'short'

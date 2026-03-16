@@ -107,6 +107,7 @@ export default function SavedJobsPage() {
                 location={job.location}
                 salary={job.salary}
                 tags={job.benefits || []}
+                description={job.description}
                 postedAt={job.postedAt}
               />
               <button 
