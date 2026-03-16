@@ -68,6 +68,9 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-6">
           <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Главная</Link>
           <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Вакансии</Link>
+          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Для работодателей</Link>
+          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Для соискателей</Link>
+          <Link href="/" className="text-sm text-zinc-600 hover:text-zinc-900 font-medium transition-colors">Цены</Link>
           
           <div className="w-px h-4 bg-zinc-200"></div>
           
@@ -163,6 +166,9 @@ export default function Header() {
           <div className="px-4 py-4 space-y-4">
             <Link href="/" className="block text-base font-medium text-zinc-900" onClick={() => setIsMobileMenuOpen(false)}>Главная</Link>
             <Link href="/" className="block text-base font-medium text-zinc-900" onClick={() => setIsMobileMenuOpen(false)}>Вакансии</Link>
+            <Link href="/" className="block text-base font-medium text-zinc-900" onClick={() => setIsMobileMenuOpen(false)}>Для работодателей</Link>
+            <Link href="/" className="block text-base font-medium text-zinc-900" onClick={() => setIsMobileMenuOpen(false)}>Для соискателей</Link>
+            <Link href="/" className="block text-base font-medium text-zinc-900" onClick={() => setIsMobileMenuOpen(false)}>Цены</Link>
             
             <div className="h-px bg-zinc-200 my-4"></div>
             

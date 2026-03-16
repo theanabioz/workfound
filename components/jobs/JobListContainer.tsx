@@ -32,22 +32,6 @@ export default function JobListContainer({ children }: JobListContainerProps) {
 
   return (
     <div className="relative min-h-[600px]">
-      <AnimatePresence>
-        {isUpdating && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-10 bg-zinc-50/40 backdrop-blur-[1px] flex items-start justify-center pt-20 pointer-events-none"
-          >
-            <div className="bg-white px-4 py-2 shadow-sm border border-zinc-200 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-zinc-900" />
-              <span className="text-xs font-bold uppercase tracking-widest text-zinc-900">Обновление...</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div className={`transition-opacity duration-300 ${isUpdating ? 'opacity-50' : 'opacity-100'}`}>
         {children}
       </div>
