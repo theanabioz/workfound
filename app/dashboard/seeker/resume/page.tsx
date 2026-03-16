@@ -79,13 +79,12 @@ export default function ResumePage() {
 
       const updates = {
         id: user.id,
-        role: 'seeker',
         full_name: profile.full_name,
         phone: profile.phone,
+        email: profile.email,
         location: profile.location,
         about: profile.about,
         desired_position: profile.desired_position,
-        updated_at: new Date().toISOString(),
       };
 
       const { error } = await supabase

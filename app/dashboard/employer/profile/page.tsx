@@ -83,15 +83,14 @@ export default function EmployerProfilePage() {
 
       const updates = {
         id: user.id,
-        role: 'employer',
         full_name: profile.full_name,
         phone: profile.phone,
+        email: profile.email,
         industry: profile.industry,
         company_size: profile.company_size,
         about: profile.about,
         location: profile.address,
         website: profile.website,
-        updated_at: new Date().toISOString(),
       };
 
       const { error } = await supabase
