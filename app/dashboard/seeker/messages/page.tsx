@@ -21,42 +21,6 @@ function SeekerMessagesPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
-      if (user) {
-        fetchChats(user.id);
-      }
-    };
-    init();
-  }, [supabase, fetchChats]);
-
-  // Real-time subscription
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const channel = supabase
-      .channel('seeker-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `seeker_id=eq.${currentUser.id}`
-        },
-        () => {
-          fetchChats(currentUser.id);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentUser, supabase, fetchChats]);
-
   const fetchChats = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -121,6 +85,42 @@ function SeekerMessagesPage() {
       setIsLoading(false);
     }
   }, [supabase]);
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      if (user) {
+        fetchChats(user.id);
+      }
+    };
+    init();
+  }, [supabase, fetchChats]);
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel('seeker-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `seeker_id=eq.${currentUser.id}`
+        },
+        () => {
+          fetchChats(currentUser.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, supabase, fetchChats]);
 
   const activeChat = chats.find(chat => chat.id === activeChatId);
 

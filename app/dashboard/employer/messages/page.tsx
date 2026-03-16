@@ -1,9 +1,21 @@
 'use client';
 
-import { Search, Send, Paperclip, MoreVertical, CheckCircle2, Loader2 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { Search, Send, Paperclip, MoreVertical, CheckCircle2, Loader2, MessageSquare } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useSearchParams } from 'next/navigation';
+
+export default function Page() {
+  return (
+    <Suspense fallback={
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+      </div>
+    }>
+      <EmployerMessagesPage />
+    </Suspense>
+  );
+}
 
 function EmployerMessagesPage() {
   const searchParams = useSearchParams();
@@ -20,43 +32,6 @@ function EmployerMessagesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
-
-  useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
-      if (user) {
-        fetchChats(user.id);
-      }
-    };
-    init();
-  }, [supabase, fetchChats]);
-
-  // Real-time subscription
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `employer_id=eq.${currentUser.id}`
-        },
-        (payload) => {
-          // Update chats when a new message arrives
-          fetchChats(currentUser.id);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentUser, supabase, fetchChats]);
 
   const fetchChats = useCallback(async (userId: string) => {
     try {
@@ -147,6 +122,43 @@ function EmployerMessagesPage() {
       setIsLoading(false);
     }
   }, [supabase, seekerIdFromQuery, activeChatId]);
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+      if (user) {
+        fetchChats(user.id);
+      }
+    };
+    init();
+  }, [supabase, fetchChats]);
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `employer_id=eq.${currentUser.id}`
+        },
+        (payload) => {
+          // Update chats when a new message arrives
+          fetchChats(currentUser.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, supabase, fetchChats]);
 
   const activeChat = chats.find(chat => chat.id === activeChatId);
 
@@ -364,16 +376,5 @@ function EmployerMessagesPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-import { Suspense } from 'react';
-import { MessageSquare, Search, Send, Paperclip, MoreVertical, CheckCircle2, Loader2 } from 'lucide-react';
-
-export default function Page() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <EmployerMessagesPage />
-    </Suspense>
   );
 }
