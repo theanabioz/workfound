@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, ReactNode, useRef, useLayoutEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2 } from 'lucide-react';
@@ -13,6 +13,8 @@ export default function JobListContainer({ children }: JobListContainerProps) {
   const searchParams = useSearchParams();
   const [prevParams, setPrevParams] = useState(searchParams.toString());
   const [isUpdating, setIsUpdating] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [minHeight, setMinHeight] = useState<number | string>('400px');
 
   // Паттерн производного состояния: если параметры изменились, взводим флаг обновления
   if (searchParams.toString() !== prevParams) {
@@ -20,18 +22,32 @@ export default function JobListContainer({ children }: JobListContainerProps) {
     setIsUpdating(true);
   }
 
-  // Сбрасываем флаг через небольшую задержку, чтобы эффект был виден
+  // Используем useLayoutEffect для замера высоты сразу после того, как React узнал об изменениях,
+  // но до того, как браузер перерисовал экран.
+  useLayoutEffect(() => {
+    if (isUpdating && containerRef.current) {
+      setMinHeight(containerRef.current.offsetHeight);
+    }
+  }, [isUpdating]);
+
+  // Сбрасываем флаг через задержку
   useEffect(() => {
     if (isUpdating) {
       const timer = setTimeout(() => {
         setIsUpdating(false);
-      }, 400);
+        // Возвращаем стандартный min-height после завершения анимации
+        setMinHeight('400px');
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [isUpdating]);
 
   return (
-    <div className="relative min-h-[400px]">
+    <div 
+      ref={containerRef}
+      style={{ minHeight }}
+      className="relative transition-[min-height] duration-500 ease-in-out"
+    >
       <AnimatePresence>
         {isUpdating && (
           <motion.div
