@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { CATEGORIES, COUNTRIES } from '@/utils/constants';
 
 const AVAILABLE_BENEFITS = [
   'Жилье предоставляется', 
@@ -177,6 +178,7 @@ function PostJobForm() {
                 className="w-full px-4 py-3.5 bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white outline-none transition-colors text-sm text-zinc-900" 
               />
             </div>
+
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-zinc-900 mb-3">Категория <span className="text-red-600">*</span></label>
               <div className="relative">
@@ -189,10 +191,7 @@ function PostJobForm() {
                   className="w-full pl-11 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white outline-none transition-colors appearance-none text-sm text-zinc-900"
                 >
                   <option value="" disabled>Выберите категорию</option>
-                  <option value="Транспорт и логистика">Транспорт и логистика</option>
-                  <option value="Строительство">Строительство</option>
-                  <option value="Производство">Производство</option>
-                  <option value="Склад и логистика">Склад и логистика</option>
+                  {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
               </div>
             </div>
@@ -203,18 +202,19 @@ function PostJobForm() {
           {/* Location & Salary */}
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-900 mb-3">Место работы <span className="text-red-600">*</span></label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-900 mb-3">Страна <span className="text-red-600">*</span></label>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-zinc-400 absolute left-4 top-3.5" />
-                <input 
-                  type="text" 
+                <select 
                   name="location"
                   required
                   value={formData.location}
                   onChange={handleChange}
-                  placeholder="Город, Страна" 
-                  className="w-full pl-11 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white outline-none transition-colors text-sm text-zinc-900" 
-                />
+                  className="w-full pl-11 pr-4 py-3.5 bg-zinc-50 border border-zinc-200 focus:border-zinc-900 focus:bg-white outline-none transition-colors appearance-none text-sm text-zinc-900"
+                >
+                  <option value="" disabled>Выберите страну</option>
+                  {COUNTRIES.map(country => <option key={country} value={country}>{country}</option>)}
+                </select>
               </div>
             </div>
             <div>

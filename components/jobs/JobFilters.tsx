@@ -2,26 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Filter, ChevronDown, Check } from 'lucide-react';
-
-const CATEGORIES = [
-  'Строительство', 'Транспорт и логистика', 'Производство', 'IT', 'Медицина',
-  'Туризм и гостиничный бизнес', 'Сельское хозяйство', 'Продажи', 'Финансы',
-  'Образование', 'Административная работа', 'Рабочие специальности', 'Разнорабочие'
-];
-
-const COUNTRIES = [
-  'Австрия', 'Албания', 'Андорра', 'Беларусь', 'Бельгия', 'Болгария', 'Босния и Герцеговина',
-  'Великобритания', 'Венгрия', 'Германия', 'Греция', 'Дания', 'Ирландия', 'Исландия',
-  'Испания', 'Италия', 'Кипр', 'Латвия', 'Литва', 'Лихтенштейн', 'Люксембург',
-  'Мальта', 'Молдова', 'Монако', 'Нидерланды', 'Норвегия', 'Польша', 'Португалия',
-  'Румыния', 'Сан-Марино', 'Сербия', 'Словакия', 'Словения', 'Украина', 'Финляндия',
-  'Франция', 'Хорватия', 'Черногория', 'Чехия', 'Швеция', 'Швейцария', 'Эстония'
-];
-
-const SALARY_OPTIONS = ['Любая', 'от €1,500', 'от €2,000', 'от €2,500'];
-const CONDITIONS = ['Жилье предоставляется', 'Без знания языка', 'Официальное оформление'];
-
-const EMPLOYMENT_TYPES = ['Полная занятость', 'Частичная занятость', 'Контракт', 'Сезонная работа'];
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { CATEGORIES, COUNTRIES, SALARY_OPTIONS, CONDITIONS, EMPLOYMENT_TYPES } from '@/utils/constants';
 
 function FilterDropdown({ title, options, selected, onChange }: { title: string, options: string[], selected: string[], onChange: (val: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -65,15 +47,23 @@ function FilterDropdown({ title, options, selected, onChange }: { title: string,
 }
 
 export default function JobFilters() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [selectedSalaries, setSelectedSalaries] = useState<string[]>([]);
-  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
 
-  const toggleSelection = (list: string[], setList: (l: string[]) => void, val: string) => {
-    setList(list.includes(val) ? list.filter(i => i !== val) : [...list, val]);
+  const getParamArray = (key: string) => searchParams.get(key)?.split(',').filter(Boolean) || [];
+
+  const updateFilters = (key: string, values: string[]) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (values.length > 0) params.set(key, values.join(','));
+    else params.delete(key);
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const toggleSelection = (key: string, list: string[], val: string) => {
+    const newList = list.includes(val) ? list.filter(i => i !== val) : [...list, val];
+    updateFilters(key, newList);
   };
 
   return (
@@ -90,13 +80,7 @@ export default function JobFilters() {
         <h3 className="font-bold text-zinc-900 mb-6 flex items-center justify-between text-sm uppercase tracking-wider">
           Фильтры
           <button 
-            onClick={() => { 
-              setSelectedCategories([]); 
-              setSelectedCountries([]); 
-              setSelectedTypes([]); 
-              setSelectedSalaries([]);
-              setSelectedConditions([]);
-            }}
+            onClick={() => router.push(pathname)}
             className="text-[11px] text-zinc-500 font-medium hover:text-zinc-900 transition-colors uppercase tracking-wider"
           >
             Сбросить
@@ -104,11 +88,11 @@ export default function JobFilters() {
         </h3>
         
         <div className="space-y-4">
-          <FilterDropdown title="Специальность" options={CATEGORIES} selected={selectedCategories} onChange={(v) => toggleSelection(selectedCategories, setSelectedCategories, v)} />
-          <FilterDropdown title="Страна" options={COUNTRIES} selected={selectedCountries} onChange={(v) => toggleSelection(selectedCountries, setSelectedCountries, v)} />
-          <FilterDropdown title="Тип занятости" options={EMPLOYMENT_TYPES} selected={selectedTypes} onChange={(v) => toggleSelection(selectedTypes, setSelectedTypes, v)} />
-          <FilterDropdown title="Зарплата" options={SALARY_OPTIONS} selected={selectedSalaries} onChange={(v) => toggleSelection(selectedSalaries, setSelectedSalaries, v)} />
-          <FilterDropdown title="Условия" options={CONDITIONS} selected={selectedConditions} onChange={(v) => toggleSelection(selectedConditions, setSelectedConditions, v)} />
+          <FilterDropdown title="Специальность" options={CATEGORIES} selected={getParamArray('category')} onChange={(v) => toggleSelection('category', getParamArray('category'), v)} />
+          <FilterDropdown title="Страна" options={COUNTRIES} selected={getParamArray('country')} onChange={(v) => toggleSelection('country', getParamArray('country'), v)} />
+          <FilterDropdown title="Тип занятости" options={EMPLOYMENT_TYPES} selected={getParamArray('type')} onChange={(v) => toggleSelection('type', getParamArray('type'), v)} />
+          <FilterDropdown title="Зарплата" options={SALARY_OPTIONS} selected={getParamArray('salary')} onChange={(v) => toggleSelection('salary', getParamArray('salary'), v)} />
+          <FilterDropdown title="Условия" options={CONDITIONS} selected={getParamArray('condition')} onChange={(v) => toggleSelection('condition', getParamArray('condition'), v)} />
         </div>
       </div>
     </>

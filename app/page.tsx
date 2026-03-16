@@ -4,10 +4,11 @@ import JobCard from '@/components/jobs/JobCard';
 import { Search, MapPin } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const supabase = await createClient();
+  const params = await searchParams;
   
-  const { data: jobs, error } = await supabase
+  let query = supabase
     .from('vacancies')
     .select(`
       *,
@@ -15,8 +16,16 @@ export default async function Home() {
         full_name
       )
     `)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false });
+    .eq('status', 'active');
+
+  if (params.category) query = query.in('category', (params.category as string).split(','));
+  if (params.country) query = query.in('location', (params.country as string).split(','));
+  if (params.type) query = query.in('employment_type', (params.type as string).split(','));
+  
+  // Salary and Conditions would need specific database fields or logic
+  // For now, we apply the basic filters
+  
+  const { data: jobs, error } = await query.order('created_at', { ascending: false });
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans">
